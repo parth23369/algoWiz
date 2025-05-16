@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Divide and Conquer</title>
+  <title>Greedy</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet" />
   <style>
     * {
@@ -98,10 +98,10 @@
 
   <!-- Sidebar with problems -->
   <div class="sidebar">
-    <h2>Divide & Conquer</h2>
+    <h2>Greedy</h2>
     <ul class="problem-list">
-      <li onclick="loadVisualization('binarysearch')">
-        <i>🔍</i> Binary Search
+      <li onclick="loadVisualization('Non Overlapping Intervals')">
+        <i>🔍</i> Non Overlapping Intervals
       </li>
       <!-- Future items:
       <li onclick="loadVisualization('mergeSort')"><i>🧬</i> Merge Sort</li>
@@ -111,43 +111,45 @@
 
   <!-- Right content area -->
   <div class="content" id="content-area">
-    <h2>What is Divide & Conquer?</h2>
+    <h2>What is Greedy Algorithm?</h2>
     <p>
-      Divide and Conquer algorithm is a problem-solving strategy that involves.<br>
-    
-<br>Divide : Break the given problem into smaller non-overlapping problems.<br>
-Conquer : Solve Smaller Problems<br>
-Combine : Use the Solutions of Smaller Problems to find the overall result.<br>
-
-    </p>
+      Greedy algorithms are a class of algorithms that make locally optimal choices at each step with the hope of finding a global optimum solution. But before understanding how it leads to a globally optimal solution and what is the difference between sub-optimal solution, we need to explore how any choice on the given input data affects the runtime of the algorithm.<br><br>
+      If there are n input processes ordered in a certain way, such that each input i takes t <sub>i</sub> time to complete, then the total time taken will be:<br> 
+      <br>$$\sum_{i=1}^{n} \sum_{j=1}^{i} t_j$$<br><br>
+      That is for a process to complete, it needs to wait for all the processes that are before it to complete. So the time taken for process i is equal to the sum of all the processes that are before it. Thus making a simple choice of arranging the processes such that processes with lowest finish time are executed first ensures that while it is being executed, the other processes do not have to wait for much longer. We can extend this example to include the weights of processes as well which is a valid scenario considering we assign the processes a priority in real time as well. In that case sorting them in decreasing order of their weights will be the correct choice. Thus a simple change, at each step on our input data, leads to a optimal solution which runs in optimal time complexity. <br><br>
+      We can now procede to understand how this simple choice leads to a globally optimal solution, and what is a globally optimal solution? are there any other choices available to us? See, every choice that we make at each step is a greedy choice, and the solution that we get from these choices is a greedy solution. But not all greedy solutions are globally optimal solutions. There might be sub-optimal solutions as well, as we only considered a restricted set of input and our choice returns a solution on it but for input outside that range it fails and this solution is sub-optimal, solution that works on all inputs is a globally optimal solution. So we need to work out on our knowledge of the problem and the input data to understand if the solution we are getting is a globally optimal solution or not.<br><br>
     <p>
-      Examples of Divide and Conquer are Merge Sort, Quick Sort, Binary Search and Closest Pair of Points. If we have overlapping subproblems, we then use <a href="dp.html" target="_blank">Dynamic Programming</a>
- to solve them. 
+  
     </p>
-    <img src="https://media.geeksforgeeks.org/wp-content/uploads/20240403162200/Divide-and-Conquer-banner.webp" />
+    <img src="https://media.geeksforgeeks.org/wp-content/uploads/20241106184428148764/fractional-knapsack.webp" />
     <p>
-        Applications of Divide and Conquer Algorithm<br>
-<br>The following are some standard algorithms that follow Divide and Conquer algorithm:<br>
-
-<br><a href ="pages/visualizations/binarySearch.html">Binary Search</a> is an efficient algorithm for finding an element in a sorted array by repeatedly dividing the search interval in half. It works by comparing the target value with the middle element and narrowing the search to either the left or right half, depending on the comparison.
-<br><a href ="pages/visualizations/quickSort.html">Quick Sort</a> is a sorting algorithm that picks a pivot element and rearranges the array elements so that all elements smaller than the picked pivot element move to the left side of the pivot, and all greater elements move to the right side. Finally, the algorithm recursively sorts the subarrays on the left and right of the pivot element.
-<br><a href ="pages/visualizations/mergeSort.html">Merge Sort</a> is also a sorting algorithm. The algorithm divides the array into two halves, recursively sorts them, and finally merges the two sorted halves.
-<br><a href ="pages/visualizations/closestPairOfPoints.html">Closest Pair of Point</a> The problem is to find the closest pair of points in a set of points in the x-y plane. The problem can be solved in O(n^2) time by calculating the distances of every pair of points and comparing the distances to find the minimum. The Divide and Conquer algorithm solves the problem in O(N log N) time.
-<br><a href ="pages/visualizations/strassen.html">Strassen's Algorithm</a> is an efficient algorithm to multiply two matrices. A simple method to multiply two matrices needs 3 nested loops and is O(n^3). Strassen’s algorithm multiplies two matrices in O(n^2.8974) time.
-<br><a href ="pages/visualizations/cooleyFFT.html">Cooley Tukey Fast Fourier Transform (FFT)</a> algorithm is the most common algorithm for FFT. It is a divide and conquer algorithm which works in O(N log N) time.
-<br><a href ="pages/visualizations/karatsuba.html">Karatsuba's Algorithm</a> for fast multiplication does the multiplication of two binary strings in O(n1.59) where n is the length of binary string.<br>
-    </p>
+      Some problems where we use Greedy Algorithms are:<br>
+      <ul>
+        <li>Fractional Knapsack Problem</li>
+        <li>Activity Selection Problem</li>
+        <li>Job Sequencing Problem</li>
+        <li>Huffman Coding</li>
+        <li>Prim's and Kruskal's Algorithm for Minimum Spanning Tree</li>
+        <li>Dijkstra's Algorithm for Shortest Path</li>
+      </ul>
+      <br>
+      Now Greedy Algorithms are not always optimal, for example for minimam jumps to reach a target step, the greedy choice is to take the maximum jump possible at each step. But this does not always lead to a globally optimal solution. For example, if we have an array of jumps [2, 3, 1, 1, 4], the greedy choice would be to take the maximum jump of 4 from index 0, but this would lead us to index 4 which is not the target step. So we need to be careful while using Greedy Algorithms and check if they are optimal for our problem or not. Thus we need <a href="dp.html" target="_blank">Dynamic Programming</a> here to solve the problem optimally. <br><br>  
+    </p>    
   </div>
 
-  <script>
-    function loadVisualization(problemName) {
-      const contentArea = document.getElementById('content-area');
-      // Replace content with an iframe to your visualization page
-      contentArea.innerHTML = `
-        <iframe src="visualizations/${problemName}.html"></iframe>
-      `;
-    }
-  </script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
 
+<script>
+  function loadVisualization(problemName) {
+    const contentArea = document.getElementById('content-area');
+    // Replace content with an iframe to your visualization page
+    contentArea.innerHTML = `
+      <iframe src="visualizations/${problemName}.html"></iframe>
+    `;
+  }
+</script>
 </body>
 </html>
