@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dynamic Programming</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Orbitron', sans-serif;
+      background-color: #000;
+      color: white;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      width: 33%;
+      background-color: #111;
+      border-right: 2px solid #0ff3;
+      padding: 2rem;
+      overflow-y: auto;
+    }
+
+    .sidebar h2 {
+      color: #0ff;
+      margin-bottom: 1.5rem;
+    }
+
+    .problem-list {
+      list-style: none;
+    }
+
+    .problem-list li {
+      padding: 1rem;
+      margin-bottom: 1rem;
+      background-color: #1a1a1a;
+      border-radius: 8px;
+      border: 1px solid #0ff3;
+      cursor: pointer;
+      transition: background 0.3s;
+      display: flex;
+      align-items: center;
+    }
+
+    .problem-list li:hover {
+      background-color: #0ff3;
+      color: black;
+    }
+
+    .problem-list li i {
+      margin-right: 0.75rem;
+      color: #0ff;
+    }
+
+    .content {
+      width: 67%;
+      padding: 2rem;
+      overflow-y: auto;
+    }
+
+    .content h2 {
+      font-size: 2rem;
+      color: #0ff;
+      margin-bottom: 1rem;
+    }
+
+    .content p {
+      font-size: 1rem;
+      color: #ccc;
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+    }
+
+    .content img {
+      width: 100%;
+      max-width: 500px;
+      border-radius: 10px;
+      border: 2px solid #0ff3;
+    }
+
+    iframe {
+      width: 100%;
+      height: 90vh;
+      border: none;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar with problems -->
+  <div class="sidebar">
+    <h2>Dynamic Programming</h2>
+    <ul class="problem-list">
+      <li onclick="loadVisualization('knapsack')">
+        <i>🔍</i> knapsack
+      </li>
+      <!-- Future items:
+      <li onclick="loadVisualization('mergeSort')"><i>🧬</i> Merge Sort</li>
+      -->
+    </ul>
+  </div>
+
+  <!-- Right content area -->
+  <div class="content" id="content-area">
+    <h2>What is Dynamic Programming?</h2>
+    <p>
+        It is an algorithm, or basically a method, used to optimise the recursive solutions of problems. When we apply the recursive algorithm to a problem then it is highly likely that we will explore all the subproblems of the problem. Now among those subproblems, many are repreated subproblems and thus, we need a mechanism to store the results of those subproblems so that we do not have to recompute them again and again. This is where Dynamic Programming comes into play. It stores the results of the subproblems in a table (or an array) and uses them when needed. Look at the given example of how we use recursive algorithm to solve the Classical problem of Fibonacci Numbers and then later use Dynamic Programming to optimise on the existing solution.<br>
+    </p>
+    <img src="https://media.geeksforgeeks.org/wp-content/uploads/20250106170245473186/Dynamic-Programming-or-DP-1.webp" />
+    <img src="https://media.geeksforgeeks.org/wp-content/uploads/20250106170245668624/Dynamic-Programming-or-DP-2.webp" />
+    <p>
+        Now this is different from the <a href="greedy.html" target="_blank">Greedy</a> algorithm as in Dynamic Programming Problems, you need to specifically go on and explore all the subproblems whereas in Greedy algorithms we are making locally optimal choices before solving any subproblem, hoping that these choices will lead to a globally optimal solution .Back to our discussion, there are different ways to implement Dynamic Programming. The two most common ways are:<br>
+        <br>
+        1. Top Down Approach (Memoization):<br>
+        Memoization is a top-bottom recursion based approach that uses a table to store the already computed subproblems. Thus before we procede to compute the next subproblem we check if it is really needed to be computed and stored, next, we check if the result of that subproblem is already present in the table. If it is present then we use that value and do not compute it again. If it is not present then we compute it and store it in the table.<br>
+        Time complexity of this approach is O(n<sup>2</sup>) and Space complexity is O(n).<br>
+        <br>
+        2. Bottom Up Approach (Tabulation):<br>
+        Tabulation is a bottom up approach that uses the base cases to compute the next subproblem. It then uses a table to store the results of the subproblems and then uses those results to compute the next subproblem. This approach is iterative and does not use recursion. The table is filled in a bottom up manner, starting from the base cases and moving towards the final result. However there are underlying disadvantages to this method, its state transition are difficult to trace and it gets even complicated when a lot of conditions are involved, however it is faster than Memoization because of lack of a recursion call overhead. Every subproblem whether desirable or not need to be computed and filled ONE BY ONE, we can reduce them by applying certain conditions but it outperforms the top-bottom approach by a constant factor.<br>
+        <br>
+        <br>And there exist a special case of Dynamic Programming when we use some previously computed values to compute the next value. In such cases we can even use a fixed number of variables required to compute the next subproblem to store the values of desired subproblems instead of using a table or an array and then finally return the final subproblem's result. This is called Space Optimisation of Dynamic Programming.<br>
+    </p>
+    <p>
+        Some popular problems solved using Dynamic Programming are Fibonacci Numbers, Diff Utility (Longest Common Subsequence), Bellman–Ford Shortest Path, Edit Distance and Matrix Chain Multiplication.<br>
+        <br>We can also ease the task of grasping the concept of Dynamic Programming by studying it as various types of subproblems, like DP on Trees, DP on Graphs, DP on Strings, DP on Bitmasking, DP on Trees and Graphs, DP on Subsets and DP on Paths, DP on Grids, DP on arrays, DP on strings and substrings. Then with further practise you can solve the problems using Dynamic Programming in a more efficient way.<br>
+    </p>
+  </div>
+
+  <script>
+    function loadVisualization(problemName) {
+      const contentArea = document.getElementById('content-area');
+      // Replace content with an iframe to your visualization page
+      contentArea.innerHTML = `
+        <iframe src="visualizations/${problemName}.html"></iframe>
+      `;
+    }
+  </script>
+
+</body>
+</html>
