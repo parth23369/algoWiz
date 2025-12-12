@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Binary Search Visualization</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet" />
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Orbitron', sans-serif;
+      background-color: #000;
+      color: white;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* LEFT PANEL */
+    .left-panel {
+      width: 33%;
+      background-color: #111;
+      border-right: 2px solid #0ff3;
+      padding: 2rem;
+      overflow-y: auto;
+    }
+
+    .left-panel h2 {
+      color: #0ff;
+      margin-bottom: 1.5rem;
+      font-size: 1.8rem;
+    }
+
+    /* Visualization box */
+    .viz-box {
+      background-color: #1a1a1a;
+      border: 2px solid #0ff3;
+      border-radius: 10px;
+      height: 250px;
+      margin-bottom: 2rem;
+      padding: 1rem;
+    }
+
+    /* Run Visualization button */
+    .run-btn {
+      background-color: #0ff3;
+      padding: 0.8rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      color: black;
+      font-size: 1rem;
+      margin-bottom: 1.5rem;
+      transition: background 0.3s;
+    }
+
+    .run-btn:hover {
+      background-color: #0ff;
+    }
+
+    /* Code block */
+    .code-block {
+      margin-top: 1rem;
+    }
+
+    .code-block h3 {
+      color: #0ff;
+      margin-bottom: 0.5rem;
+      font-size: 1.4rem;
+    }
+
+    pre {
+      background-color: #000;
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid #0ff3;
+      color: #0ff;
+      overflow-x: auto;
+      font-size: 0.9rem;
+      line-height: 1.3rem;
+    }
+
+    /* RIGHT PANEL */
+    .right-panel {
+      width: 67%;
+      padding: 2rem;
+      overflow-y: auto;
+    }
+
+    .right-panel h1 {
+      color: #0ff;
+      font-size: 2.2rem;
+      margin-bottom: 1rem;
+    }
+
+    .right-panel p {
+      font-size: 1rem;
+      color: #ccc;
+      line-height: 1.7;
+      margin-bottom: 1.4rem;
+    }
+
+    .right-panel ul {
+      margin-left: 1rem;
+      color: #ccc;
+      line-height: 1.7;
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <!-- LEFT PANEL -->
+  <div class="left-panel">
+
+    <h2>Binary Search</h2>
+
+    <button class="run-btn" onclick="runVisualization()">
+      ▶ Run Visualization
+    </button>
+
+    <div class="viz-box" id="visualizationArea">
+      <!-- You will put your visualization here -->
+      <p style="opacity:0.4;">Visualization will appear here...</p>
+    </div>
+
+    <div class="code-block">
+      <h3>Binary Search Code</h3>
+      <pre><code>
+// Iterative Binary Search
+function binarySearch(arr, target) {
+  let left = 0, right = arr.length - 1;
+
+  while (left <= right) {
+    let mid = Math.floor((left + right) / 2);
+
+    if (arr[mid] === target) return mid;
+
+    if (arr[mid] < target)
+      left = mid + 1;
+    else
+      right = mid - 1;
+  }
+  return -1;
+}
+      </code></pre>
+    </div>
+
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+    <h1>How Binary Search Works</h1>
+
+    <p>
+      Binary Search is a highly efficient search algorithm used on sorted arrays.
+      It works by repeatedly dividing the search interval into half.
+    </p>
+
+    <p>
+      At each step:
+    </p>
+
+    <ul>
+      <li>Compare target with the middle element</li>
+      <li>If equal → element found</li>
+      <li>If smaller → search in left half</li>
+      <li>If larger → search in right half</li>
+    </ul>
+
+    <p>
+      Time Complexity: <strong style="color:#0ff;">O(log n)</strong><br>
+      Space Complexity: <strong style="color:#0ff;">O(1)</strong>
+    </p>
+
+    <p>
+      This makes Binary Search extremely fast for large datasets.
+    </p>
+  </div>
+
+  <script>
+    function runVisualization() {
+      alert("Binary Search visualization will go here!");
+    }
+  </script>
+
+</body>
+</html>
