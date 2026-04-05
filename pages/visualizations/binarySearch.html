@@ -1,196 +1,386 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Binary Search Visualization</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Binary Search Visualization</title>
 
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap"
+      rel="stylesheet"
+    />
 
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-    body {
-      font-family: 'Orbitron', sans-serif;
-      background-color: #000;
-      color: white;
-      display: flex;
-      height: 100vh;
-      overflow: hidden;
-    }
+      body {
+        font-family: 'Orbitron', sans-serif;
+        background-color: #000;
+        color: white;
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+      }
 
-    /* LEFT PANEL */
-    .left-panel {
-      width: 33%;
-      background-color: #111;
-      border-right: 2px solid #0ff3;
-      padding: 2rem;
-      overflow-y: auto;
-    }
+      /* LEFT PANEL */
+      .left-panel {
+        width: 33%;
+        background-color: #111;
+        border-right: 2px solid #0ff3;
+        padding: 2rem;
+        overflow-y: auto;
+      }
 
-    .left-panel h2 {
-      color: #0ff;
-      margin-bottom: 1.5rem;
-      font-size: 1.8rem;
-    }
+      .left-panel h2 {
+        color: #0ff;
+        margin-bottom: 1.5rem;
+        font-size: 1.8rem;
+      }
 
-    /* Visualization box */
-    .viz-box {
-      background-color: #1a1a1a;
-      border: 2px solid #0ff3;
-      border-radius: 10px;
-      height: 250px;
-      margin-bottom: 2rem;
-      padding: 1rem;
-    }
+      /* Visualization box */
+      .viz-box {
+        background-color: #1a1a1a;
+        border: 2px solid #0ff3;
+        border-radius: 10px;
+        height: 250px;
+        margin-bottom: 2rem;
+        padding: 1rem;
+      }
 
-    /* Run Visualization button */
-    .run-btn {
-      background-color: #0ff3;
-      padding: 0.8rem 1.5rem;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      color: black;
-      font-size: 1rem;
-      margin-bottom: 1.5rem;
-      transition: background 0.3s;
-    }
+      /* Run Visualization button */
+      .run-btn {
+        background-color: #0ff3;
+        padding: 0.8rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        color: black;
+        font-size: 1rem;
+        margin-bottom: 1.5rem;
+        transition: background 0.3s;
+      }
 
-    .run-btn:hover {
-      background-color: #0ff;
-    }
+      .run-btn:hover {
+        background-color: #0ff;
+      }
 
-    /* Code block */
-    .code-block {
-      margin-top: 1rem;
-    }
+      /* Code block */
+      .code-block {
+        margin-top: 1rem;
+      }
 
-    .code-block h3 {
-      color: #0ff;
-      margin-bottom: 0.5rem;
-      font-size: 1.4rem;
-    }
+      .code-block h3 {
+        color: #0ff;
+        margin-bottom: 0.5rem;
+        font-size: 1.4rem;
+      }
 
-    pre {
-      background-color: #000;
-      padding: 1rem;
-      border-radius: 8px;
-      border: 1px solid #0ff3;
-      color: #0ff;
-      overflow-x: auto;
-      font-size: 0.9rem;
-      line-height: 1.3rem;
-    }
+      pre {
+        background-color: #000;
+        padding: 1rem;
+        border-radius: 8px;
+        border: 1px solid #0ff3;
+        color: #0ff;
+        overflow-x: auto;
+        font-size: 0.9rem;
+        line-height: 1.3rem;
+      }
 
-    /* RIGHT PANEL */
-    .right-panel {
-      width: 67%;
-      padding: 2rem;
-      overflow-y: auto;
-    }
+      /* RIGHT PANEL */
+      .right-panel {
+        width: 67%;
+        padding: 2rem;
+        overflow-y: auto;
+      }
 
-    .right-panel h1 {
-      color: #0ff;
-      font-size: 2.2rem;
-      margin-bottom: 1rem;
-    }
+      .right-panel h1 {
+        color: #0ff;
+        font-size: 2.2rem;
+        margin-bottom: 1rem;
+      }
 
-    .right-panel p {
-      font-size: 1rem;
-      color: #ccc;
-      line-height: 1.7;
-      margin-bottom: 1.4rem;
-    }
+      .right-panel p {
+        font-size: 1rem;
+        color: #ccc;
+        line-height: 1.7;
+        margin-bottom: 1.4rem;
+      }
 
-    .right-panel ul {
-      margin-left: 1rem;
-      color: #ccc;
-      line-height: 1.7;
-    }
+      .right-panel ul {
+        margin-left: 1rem;
+        color: #ccc;
+        line-height: 1.7;
+      }
 
-  </style>
-</head>
+      /* ✅ ADDED: Divider */
+      #divider {
+        width: 6px;
+        background: #0ff3;
+        cursor: col-resize;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- LEFT PANEL -->
+    <div class="left-panel">
+      <h2 style="position:relative;">
+        Binary Search
+        <button id="toggleSidebar" style="
+          position:absolute;
+          right:0;
+          top:0;
+          background:#0ff3;
+          border:none;
+          padding:4px 8px;
+          cursor:pointer;
+        ">☰</button>
+      </h2>
 
-<body>
+      <button class="run-btn" onclick="runVisualization()">
+        ▶️ Run Visualization
+      </button>
 
-  <!-- LEFT PANEL -->
-  <div class="left-panel">
+      <div class="viz-box" id="visualizationArea">
+        <p style="opacity: 0.4">Visualization will appear here...</p>
+      </div>
 
-    <h2>Binary Search</h2>
-
-    <button class="run-btn" onclick="runVisualization()">
-      ▶ Run Visualization
-    </button>
-
-    <div class="viz-box" id="visualizationArea">
-      <!-- You will put your visualization here -->
-      <p style="opacity:0.4;">Visualization will appear here...</p>
-    </div>
-
-    <div class="code-block">
-      <h3>Binary Search Code</h3>
-      <pre><code>
-// Iterative Binary Search
+      <div class="code-block">
+        <h3>Binary Search Code</h3>
+        <pre><code>// Iterative Binary Search
 function binarySearch(arr, target) {
   let left = 0, right = arr.length - 1;
-
+  
   while (left <= right) {
     let mid = Math.floor((left + right) / 2);
-
+    
     if (arr[mid] === target) return mid;
-
+    
     if (arr[mid] < target)
       left = mid + 1;
     else
       right = mid - 1;
   }
+  
   return -1;
-}
-      </code></pre>
+}</code></pre>
+      </div>
     </div>
 
-  </div>
+    <!-- ✅ ADDED: Divider -->
+    <div id="divider"></div>
 
-  <!-- RIGHT PANEL -->
-  <div class="right-panel">
-    <h1>How Binary Search Works</h1>
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+      <h1>How Binary Search Works</h1>
 
-    <p>
-      Binary Search is a highly efficient search algorithm used on sorted arrays.
-      It works by repeatedly dividing the search interval into half.
-    </p>
+      <p>
+        Binary Search is a highly efficient search algorithm used on sorted
+        arrays. It works by repeatedly dividing the search interval into half.
+      </p>
 
-    <p>
-      At each step:
-    </p>
+      <p>At each step:</p>
 
-    <ul>
-      <li>Compare target with the middle element</li>
-      <li>If equal → element found</li>
-      <li>If smaller → search in left half</li>
-      <li>If larger → search in right half</li>
-    </ul>
+      <ul>
+        <li>Compare target with the middle element</li>
+        <li>If equal → element found</li>
+        <li>If smaller → search in left half</li>
+        <li>If larger → search in right half</li>
+      </ul>
 
-    <p>
-      Time Complexity: <strong style="color:#0ff;">O(log n)</strong><br>
-      Space Complexity: <strong style="color:#0ff;">O(1)</strong>
-    </p>
+      <p>
+        Time Complexity: <strong style="color: #0ff">O(log n)</strong><br />
+        Space Complexity: <strong style="color: #0ff">O(1)</strong>
+      </p>
 
-    <p>
-      This makes Binary Search extremely fast for large datasets.
-    </p>
-  </div>
+      <p>This makes Binary Search extremely fast for large datasets.</p>
+    </div>
 
-  <script>
-    function runVisualization() {
-      alert("Binary Search visualization will go here!");
-    }
-  </script>
+    <script>
+      let defaultArray = [2, 5, 8, 12, 16, 23, 28, 36];
+      let left = 0,
+        right = defaultArray.length - 1;
+      let target = null;
 
-</body>
+      function runVisualization() {
+        let n = parseInt(prompt('Enter array length (max 10):'));
+        if (isNaN(n) || n < 1 || n > 10) {
+          alert('Please enter a valid length (1–10).');
+          return;
+        }
+
+        let raw = prompt(`Enter ${n} SORTED numbers (space-separated):`);
+        if (!raw) return;
+
+        let arr = raw.trim().split(/\s+/).map(Number);
+        if (arr.length !== n || arr.some(isNaN)) {
+          alert('Invalid array. Enter exactly ' + n + ' numbers.');
+          return;
+        }
+
+        let t = prompt('Enter target value:');
+        if (t === null) return;
+        target = Number(t);
+        if (isNaN(target)) {
+          alert('Invalid target.');
+          return;
+        }
+
+        window.array = arr;
+        window.left = 0;
+        window.right = arr.length - 1;
+        window.inSearch = true;
+
+        renderArray(null);
+
+        const btn = document.querySelector('.run-btn');
+        if (btn) {
+          btn.textContent = 'Next Step ▶️';
+          btn.onclick = function () {
+            runStep();
+          };
+        }
+      }
+
+      function renderArray(mid = null) {
+        const viz = document.getElementById('visualizationArea');
+        viz.innerHTML = '';
+
+        let arrayRow = document.createElement('div');
+        arrayRow.style.display = 'flex';
+        arrayRow.style.justifyContent = 'center';
+        arrayRow.style.marginBottom = '20px';
+
+        window.array.forEach((value, index) => {
+          let box = document.createElement('div');
+          box.style.width = '50px';
+          box.style.height = '50px';
+          box.style.border = '2px solid #0ff3';
+          box.style.display = 'flex';
+          box.style.alignItems = 'center';
+          box.style.justifyContent = 'center';
+          box.style.margin = '5px';
+          box.style.borderRadius = '8px';
+          box.style.fontSize = '1.2rem';
+          box.style.transition = '0.2s';
+
+          if (index < left || index > right) box.style.opacity = '0.25';
+          if (index === mid) box.style.border = '3px solid yellow';
+
+          box.innerText = value;
+          arrayRow.appendChild(box);
+        });
+
+        viz.appendChild(arrayRow);
+
+        let pointerRow = document.createElement('div');
+        pointerRow.style.display = 'flex';
+        pointerRow.style.justifyContent = 'center';
+        pointerRow.style.marginTop = '5px';
+
+        window.array.forEach((_, index) => {
+          let pointer = document.createElement('div');
+          pointer.style.width = '50px';
+          pointer.style.height = '20px';
+          pointer.style.display = 'flex';
+          pointer.style.alignItems = 'center';
+          pointer.style.justifyContent = 'center';
+          pointer.style.margin = '5px';
+          pointer.style.fontSize = '1.1rem';
+
+          if (index === left) pointer.innerHTML = 'L';
+          else if (index === right) pointer.innerHTML = 'R';
+          else if (index === mid) pointer.innerHTML = 'M';
+
+          pointerRow.appendChild(pointer);
+        });
+
+        viz.appendChild(pointerRow);
+
+        viz.innerHTML += `
+      <p style="text-align:center; margin-top:10px;">
+        🎯 Target = <span style="color:#0ff;">${target}</span>
+      </p>
+    `;
+      }
+
+      function runStep() {
+        if (left > right) {
+          document.getElementById('visualizationArea').innerHTML += `
+        <p style="color:red; text-align:center; margin-top:20px;">
+          ❌ Target Not Found
+        </p>`;
+          return;
+        }
+
+        let mid = Math.floor((left + right) / 2);
+
+        renderArray(mid);
+
+        if (window.array[mid] === target) {
+          document.getElementById('visualizationArea').innerHTML += `
+        <p style="color:#0f0; text-align:center; margin-top:15px;">
+          ✅ Found target at index ${mid}!
+        </p>`;
+          return;
+        }
+
+        if (window.array[mid] < target) left = mid + 1;
+        else right = mid - 1;
+      }
+      
+      const divider = document.getElementById("divider");
+      const leftPanel = document.querySelector(".left-panel");
+
+      let isDragging = false;
+
+      divider.addEventListener("mousedown", () => {
+        isDragging = true;
+        document.body.style.userSelect = "none";
+      });
+
+      document.addEventListener("mousemove", (e) => {
+        if (!isDragging) return;
+
+        let newWidth = e.clientX;
+
+        if (newWidth < 200 || newWidth > window.innerWidth - 200) return;
+
+        leftPanel.style.width = newWidth + "px";
+      });
+
+      document.addEventListener("mouseup", () => {
+        isDragging = false;
+        document.body.style.userSelect = "auto";
+      });
+      
+      const toggleBtn = document.getElementById("toggleSidebar");
+      const restoreBtn = document.getElementById("restoreSidebar");
+      const sidebar = document.querySelector(".left-panel");
+
+      toggleBtn.addEventListener("click", () => {
+        sidebar.style.display = "none";
+        restoreBtn.style.display = "block";
+      });
+
+      restoreBtn.addEventListener("click", () => {
+        sidebar.style.display = "block";
+        restoreBtn.style.display = "none";
+      });
+    </script>
+    <button id="restoreSidebar" style="
+  position:fixed;
+  top:10px;
+  left:10px;
+  display:none;
+  background:#0ff3;
+  border:none;
+  padding:6px 10px;
+  cursor:pointer;
+  z-index:9999;
+">☰</button>
+  </body>
 </html>

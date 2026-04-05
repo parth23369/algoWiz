@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quick Sort Visualization</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet"/>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Orbitron', sans-serif;
+      background-color: #000;
+      color: white;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── LEFT PANEL (same as your binary search) ── */
+    .left-panel {
+      width: 33%;
+      background-color: #111;
+      border-right: 2px solid #0ff3;
+      padding: 2rem;
+      overflow-y: auto;
+    }
+
+    .left-panel h2 { color: #0ff; margin-bottom: 1.5rem; font-size: 1.8rem; }
+
+    /* The bar chart lives here */
+    .viz-box {
+      background-color: #1a1a1a;
+      border: 2px solid #0ff3;
+      border-radius: 10px;
+      height: 250px;
+      margin-bottom: 1rem;
+      padding: 1rem;
+      display: flex;
+      align-items: flex-end;   /* bars grow upward from the bottom */
+      justify-content: center;
+      gap: 6px;
+    }
+
+    /* Each bar is just a div with a height */
+    .bar {
+      width: 36px;
+      border-radius: 4px 4px 0 0;
+      background-color: #0ff;         /* default: cyan */
+      display: flex;
+      align-items: flex-start;        /* number sits at the top of the bar */
+      justify-content: center;
+      padding-top: 4px;
+      font-size: 0.7rem;
+      color: #000;
+      transition: height 0.25s ease;  /* smooth height change when swapping */
+    }
+
+    /* Controls row */
+    .controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .btn {
+      background-color: #0ff3;
+      padding: 0.6rem 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      color: black;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem;
+      transition: background 0.3s;
+    }
+    .btn:hover { background-color: #0ff; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    /* Speed slider */
+    .speed-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 1.2rem;
+      font-size: 0.75rem;
+      color: #0ff;
+    }
+    input[type=range] { flex: 1; accent-color: #0ff; }
+
+    /* Status message */
+    #status {
+      font-size: 0.75rem;
+      color: #0ff;
+      min-height: 1.2rem;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    /* Code block (same as your existing style) */
+    .code-block h3 { color: #0ff; margin-bottom: 0.5rem; font-size: 1.2rem; }
+    pre {
+      background-color: #000;
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid #0ff3;
+      color: #0ff;
+      overflow-x: auto;
+      font-size: 0.8rem;
+      line-height: 1.4rem;
+    }
+
+    /* ── RIGHT PANEL ── */
+    .right-panel { width: 67%; padding: 2rem; overflow-y: auto; }
+    .right-panel h1 { color: #0ff; font-size: 2rem; margin-bottom: 1rem; }
+    .right-panel p  { font-size: 1rem; color: #ccc; line-height: 1.7; margin-bottom: 1.2rem; }
+    .right-panel h2 { color: #0ff; font-size: 1.3rem; margin: 1.5rem 0 0.5rem; }
+    .right-panel ul { margin-left: 1.2rem; color: #ccc; line-height: 1.8; }
+    .highlight { color: #0ff; font-weight: bold; }
+
+    /* Legend for bar colors */
+    .legend {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+      font-size: 0.75rem;
+      color: #ccc;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-dot  { width: 14px; height: 14px; border-radius: 3px; }
+    /* ✅ DIVIDER */
+    #divider {
+    width: 6px;
+    background: #0ff3;
+    cursor: col-resize;
+    }
+
+    #divider:hover {
+    background: #0ff;
+    }
+
+    .left-panel {
+    min-width: 250px;
+    }
+
+    .right-panel {
+    min-width: 250px;
+    flex: 1; 
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════ LEFT PANEL ══════════════════ -->
+<div class="left-panel">
+  <h2>Bubble Sort</h2>
+
+  <!-- Bar chart visualization area -->
+  <div class="viz-box" id="vizBox">
+    <!-- bars are injected here by JS -->
+  </div>
+
+  <!-- Status line ("Comparing index 2 and 3...") -->
+  <div id="status">Press "New Array" to start</div>
+
+  <!-- Buttons -->
+  <div class="controls">
+    <button class="btn" id="newBtn"  onclick="generateArray()">New Array</button>
+    <button class="btn" id="sortBtn" onclick="startSort()" disabled>Sort ▶</button>
+    <button class="btn" id="stepBtn" onclick="doStep()"    disabled>Step</button>
+    <button class="btn" id="resetBtn" onclick="resetSort()" disabled>Reset</button>
+  </div>
+
+  <!-- Speed control -->
+  <div class="speed-row">
+    <span>Slow</span>
+    <input type="range" id="speedSlider" min="100" max="1000" value="500" step="50"/>
+    <span>Fast</span>
+  </div>
+
+  <!-- Code block -->
+  <div class="code-block">
+    <h3>Bubble Sort Code</h3>
+    <pre><code>function bubbleSort(arr) {
+  let n = arr.length;
+
+  // outer loop: n-1 passes
+  for (let i = 0; i &lt; n - 1; i++) {
+
+    // inner loop: compare neighbours
+    for (let j = 0; j &lt; n - 1 - i; j++) {
+
+      // if left > right → swap
+      if (arr[j] &gt; arr[j + 1]) {
+        let temp  = arr[j];
+        arr[j]    = arr[j + 1];
+        arr[j + 1] = temp;
+      }
+    }
+  }
+  return arr;
+}</code></pre>
+  </div>
+</div>
+<div id="divider"></div>
+<!-- ══════════════════ RIGHT PANEL ══════════════════ -->
+<div class="right-panel">
+  <h1>How Bubble Sort Works</h1>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#0ff"></div>Unsorted</div>
+    <div class="legend-item"><div class="legend-dot" style="background:yellow"></div>Being compared</div>
+    <div class="legend-item"><div class="legend-dot" style="background:red"></div>Being swapped</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#0f0"></div>Sorted (in place)</div>
+  </div>
+
+  <p>
+    Bubble Sort repeatedly steps through the list, <span class="highlight">compares adjacent elements</span>,
+    and swaps them if they're in the wrong order. After each full pass, the largest
+    unsorted element "bubbles up" to its correct position at the end.
+  </p>
+
+  <h2>Step by step</h2>
+  <ul>
+    <li>Start at index 0. Compare arr[0] and arr[1].</li>
+    <li>If arr[0] &gt; arr[1] → swap them.</li>
+    <li>Move to index 1. Compare arr[1] and arr[2]. And so on.</li>
+    <li>After one full pass, the <span class="highlight">largest element is at the end</span> — it's sorted.</li>
+    <li>Repeat for the remaining n−1 elements, then n−2, and so on.</li>
+    <li>Stop when no swaps happen in a pass — array is sorted.</li>
+  </ul>
+
+  <h2>Complexity</h2>
+  <p>
+    Time: <span class="highlight">O(n²)</span> — two nested loops, each running up to n times.<br/>
+    Space: <span class="highlight">O(1)</span> — sorting happens in-place, no extra array needed.<br/>
+    Stable: <span class="highlight">Yes</span> — equal elements never swap past each other.
+  </p>
+
+  <h2>When is it used?</h2>
+  <p>
+    Almost never in production — it's too slow for large data. But it's the best algorithm
+    to <em>teach</em> sorting because the logic is completely transparent: you can watch
+    every comparison and every swap happen, step by step.
+  </p>
+
+  <h2>Compared to other sorts</h2>
+  <ul>
+    <li><span class="highlight">Merge Sort:</span> O(n log n) — much faster, but uses O(n) extra space</li>
+    <li><span class="highlight">Quick Sort:</span> O(n log n) average — in-place but not stable</li>
+    <li><span class="highlight">Bubble Sort:</span> O(n²) — slow, but simple and educational</li>
+  </ul>
+</div>
+
+<!-- ══════════════════ JAVASCRIPT ══════════════════ -->
+<script>
+  // ─── STATE ───────────────────────────────────────────────
+  // These variables hold everything the visualizer needs to know
+  let array   = [];       // the numbers we're sorting
+  let steps   = [];       // pre-computed list of every comparison+swap
+  let stepIdx = 0;        // which step we're currently on
+  let autoTimer = null;   // the auto-play timer (so we can cancel it)
+
+  // ─── STEP 1: Generate a random array and draw it ─────────
+  function generateArray() {
+    // Stop any running animation
+    clearInterval(autoTimer);
+    autoTimer = null;
+
+    // Make 8 random numbers between 10 and 99
+    array = [];
+    for (let i = 0; i < 8; i++) {
+      array.push(Math.floor(Math.random() * 90) + 10);
+    }
+
+    // Pre-compute ALL the steps so we can play/pause/step freely
+    steps   = computeSteps([...array]);   // spread: don't mutate original
+    stepIdx = 0;
+
+    // Draw the bars in their starting positions
+    drawBars(array, [], []);
+
+    // Enable buttons
+    document.getElementById('sortBtn').disabled  = false;
+    document.getElementById('stepBtn').disabled  = false;
+    document.getElementById('resetBtn').disabled = false;
+    document.getElementById('sortBtn').textContent = 'Sort ▶';
+    document.getElementById('status').textContent = `Array ready. ${steps.length} steps total.`;
+  }
+
+  // ─── STEP 2: Pre-compute every comparison and swap ───────
+  // We simulate the full sort and record what happened at each moment.
+  // This lets us play, pause, and step without re-running the sort logic.
+  function computeSteps(arr) {
+    let log  = [];   // list of step objects we'll return
+    let n    = arr.length;
+    let sortedIndices = new Set();  // indices that are fully in place
+
+    for (let i = 0; i < n - 1; i++) {
+      for (let j = 0; j < n - 1 - i; j++) {
+
+        // Record: "we are comparing j and j+1"
+        log.push({
+          type:    'compare',
+          arr:     [...arr],          // snapshot of the array RIGHT NOW
+          compare: [j, j + 1],       // which two bars are yellow
+          sorted:  [...sortedIndices]
+        });
+
+        if (arr[j] > arr[j + 1]) {
+          // Swap in our simulation array
+          let temp   = arr[j];
+          arr[j]     = arr[j + 1];
+          arr[j + 1] = temp;
+
+          // Record: "we swapped j and j+1"
+          log.push({
+            type:    'swap',
+            arr:     [...arr],
+            compare: [j, j + 1],     // these two bars turn red during swap
+            sorted:  [...sortedIndices]
+          });
+        }
+      }
+      // After each pass, the element at position (n-1-i) is in its final place
+      sortedIndices.add(n - 1 - i);
+    }
+    sortedIndices.add(0);  // last remaining element is also sorted
+
+    // Final step: show the fully sorted array, all green
+    log.push({
+      type:    'done',
+      arr:     [...arr],
+      compare: [],
+      sorted:  [...Array(n).keys()]  // [0,1,2,3,4,5,6,7]
+    });
+
+    return log;
+  }
+
+  // ─── STEP 3: Draw the bars ────────────────────────────────
+  // arr      = the current array values
+  // comparing = indices [j, j+1] being highlighted yellow or red
+  // sorted   = indices that are green (done)
+  // isSwap   = true if the highlight should be red (swap), false = yellow (compare)
+  function drawBars(arr, comparing, sorted, isSwap) {
+    const vizBox = document.getElementById('vizBox');
+    vizBox.innerHTML = '';  // clear old bars
+
+    let maxVal = Math.max(...arr);  // used to scale bar heights
+
+    arr.forEach((value, index) => {
+      let bar = document.createElement('div');
+      bar.className = 'bar';
+
+      // Height: scale so the tallest bar = 200px
+      bar.style.height = Math.round((value / maxVal) * 200) + 'px';
+
+      // Color logic:
+      if (sorted.includes(index)) {
+        bar.style.backgroundColor = '#0f0';        // green = sorted
+      } else if (comparing.includes(index)) {
+        bar.style.backgroundColor = isSwap ? 'red' : 'yellow';  // active pair
+        bar.style.color = '#000';
+      } else {
+        bar.style.backgroundColor = '#0ff';        // default cyan
+      }
+
+      bar.textContent = value;  // show the number inside the bar
+      vizBox.appendChild(bar);
+    });
+  }
+
+  // ─── STEP 4: Execute one step ────────────────────────────
+  function doStep() {
+    if (stepIdx >= steps.length) return;
+
+    let step = steps[stepIdx];
+    stepIdx++;
+
+    let isSwap = step.type === 'swap';
+
+    // Update the bars to reflect this step
+    drawBars(step.arr, step.compare, step.sorted, isSwap);
+
+    // Update the status message
+    if (step.type === 'compare') {
+      document.getElementById('status').textContent =
+        `Comparing index ${step.compare[0]} (${step.arr[step.compare[0]]}) and ${step.compare[1]} (${step.arr[step.compare[1]]})`;
+    } else if (step.type === 'swap') {
+      document.getElementById('status').textContent =
+        `Swapped! ${step.arr[step.compare[0]]} and ${step.arr[step.compare[1]]}`;
+    } else {
+      document.getElementById('status').textContent = '✅ Sorted!';
+      clearInterval(autoTimer);
+      autoTimer = null;
+      document.getElementById('sortBtn').textContent = 'Sort ▶';
+    }
+  }
+
+  // ─── STEP 5: Auto-play ───────────────────────────────────
+  function startSort() {
+    if (autoTimer) {
+      // Already playing → pause
+      clearInterval(autoTimer);
+      autoTimer = null;
+      document.getElementById('sortBtn').textContent = 'Sort ▶';
+      return;
+    }
+
+    if (stepIdx >= steps.length) return;
+
+    document.getElementById('sortBtn').textContent = 'Pause ⏸';
+
+    // Get speed from slider (slider goes 100–1000, we invert so right = fast)
+    let delay = 1100 - parseInt(document.getElementById('speedSlider').value);
+
+    autoTimer = setInterval(() => {
+      if (stepIdx >= steps.length) {
+        clearInterval(autoTimer);
+        autoTimer = null;
+        document.getElementById('sortBtn').textContent = 'Sort ▶';
+        return;
+      }
+      doStep();
+    }, delay);
+  }
+
+  // ─── STEP 6: Reset ───────────────────────────────────────
+  function resetSort() {
+    clearInterval(autoTimer);
+    autoTimer = null;
+    stepIdx = 0;
+    drawBars(array, [], []);
+    document.getElementById('status').textContent = `Reset. ${steps.length} steps total.`;
+    document.getElementById('sortBtn').textContent = 'Sort ▶';
+  }
+  //for the divider drag
+  
+    const divider = document.getElementById("divider");
+    const leftPanel = document.querySelector(".left-panel");
+
+    let isDragging = false;
+
+    divider.addEventListener("mousedown", () => {
+    isDragging = true;
+    document.body.style.userSelect = "none";
+    });
+
+    document.addEventListener("mousemove", (e) => {
+    if (!isDragging) return;
+
+    let newWidth = e.clientX; //the position pf the mouse where we left after pressing 
+
+    // limits so UI doesn’t break
+    if (newWidth < 250 || newWidth > window.innerWidth - 250) return;
+
+    leftPanel.style.width = newWidth + "px";
+    });
+
+    document.addEventListener("mouseup", () => {
+    isDragging = false;
+    document.body.style.userSelect = "auto";
+    });
+</script>
+</body>
+</html>

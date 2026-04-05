@@ -100,7 +100,7 @@
   <div class="sidebar">
     <h2>Divide & Conquer</h2>
     <ul class="problem-list">
-      <li onclick="loadVisualization('binarySearch')">
+      <li onclick="openproblem('binarySearch')">
         <i>🔍</i> Binary Search
       </li>
       <!-- Future items:
@@ -140,6 +140,19 @@ Combine : Use the Solutions of Smaller Problems to find the overall result.<br>
   </div>
 
   <script>
+    function openproblem(problemName) {
+      const sidebar = document.querySelector('.sidebar');
+      const content = document.querySelector('.content');
+
+      // hide sidebar
+      sidebar.style.display = 'none';
+
+      // make content full width
+      content.style.width = '100%';
+
+      // load visualization
+      loadVisualization(problemName);
+    }
     function loadVisualization(problemName) {
       const contentArea = document.getElementById('content-area');
       // Replace content with an iframe to your visualization page
