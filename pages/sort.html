@@ -27,11 +27,28 @@
       border-right: 2px solid #0ff3;
       padding: 2rem;
       overflow-y: auto;
+      transition: width 0.2s ease, padding 0.2s ease, opacity 0.2s ease;
+    }
+
+    .sidebar.collapsed {
+      width: 0;
+      padding: 2rem 0;
+      opacity: 0;
+      overflow: hidden;
+      border-right: none;
     }
 
     .sidebar h2 {
       color: #0ff;
       margin-bottom: 1.5rem;
+    }
+
+    .sidebar h3 {
+      color: #0ff8;
+      font-size: 0.8rem;
+      margin: 1rem 0 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
     .problem-list {
@@ -64,6 +81,13 @@
       width: 67%;
       padding: 2rem;
       overflow-y: auto;
+      transition: width 0.2s ease;
+    }
+
+    .content.expanded {
+      width: 100%;
+      padding: 0;
+      overflow: hidden;
     }
 
     .content h2 {
@@ -88,8 +112,29 @@
 
     iframe {
       width: 100%;
-      height: 90vh;
+      height: 100vh;
       border: none;
+      display: block;
+    }
+
+    #backBtn {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      z-index: 10;
+      background-color: #0ff3;
+      padding: 0.6rem 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      color: black;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem;
+      transition: background 0.3s;
+    }
+
+    #backBtn:hover {
+      background-color: #0ff;
     }
 
   </style>
@@ -97,11 +142,19 @@
 <body>
 
   <!-- Sidebar with problems -->
-  <div class="sidebar">
+  <div class="sidebar" id="sidebar">
     <h2>Sorting Algorithms</h2>
+
+    <h3>Comparison-based</h3>
     <ul class="problem-list">
       <li onclick="openproblem('bubbleSort')">
         <i>🔍</i> Bubble Sort
+      </li>
+      <li onclick="openproblem('insertionSort')">
+        <i>🔍</i> Insertion Sort
+      </li>
+      <li onclick="openproblem('selectionSort')">
+        <i>🔍</i> Selection Sort
       </li>
       <li onclick="openproblem('mergeSort')">
         <i>🔍</i> Merge Sort
@@ -109,9 +162,19 @@
       <li onclick="openproblem('quickSort')">
         <i>🔍</i> Quick Sort
       </li>
-      <!-- Future items:
-      <li onclick="loadVisualization('mergeSort')"><i>🧬</i> Merge Sort</li>
-      -->
+      <li onclick="openproblem('heapSort')">
+        <i>🔍</i> Heap Sort
+      </li>
+    </ul>
+
+    <h3>Non-comparison</h3>
+    <ul class="problem-list">
+      <li onclick="openproblem('countingSort')">
+        <i>🔍</i> Counting Sort
+      </li>
+      <li onclick="openproblem('radixSort')">
+        <i>🔍</i> Radix Sort
+      </li>
     </ul>
   </div>
 
@@ -153,30 +216,38 @@
         Some popular sorting algorithms include Bubble Sort, Selection Sort, Insertion Sort, Merge Sort, Quick Sort, Heap Sort, Counting Sort, Radix Sort, and Bucket Sort.<br>
         <br>
         Sorting algorithms can also be categorized based on their use cases, such as sorting arrays, linked lists, external sorting (for large data stored on disk), and parallel sorting. With practice and understanding of these techniques, one can choose the most efficient sorting algorithm for a given problem.<br>
-    </p>>
-    
+    </p>
+    <p>
+        Beyond Bubble, Merge, and Quick Sort, a few more are worth knowing: <strong>Insertion Sort</strong> and <strong>Selection Sort</strong> are simple O(n²) comparison sorts with very different trade-offs (adaptive/stable vs. minimal swaps); <strong>Heap Sort</strong> guarantees O(n log n) with no extra memory; and <strong>Counting Sort</strong> and <strong>Radix Sort</strong> skip comparisons entirely, sorting by value ranges and digits instead. Explore each from the sidebar.
+    </p>
   </div>
 
   <script>
     function openproblem(problemName) {
-        const sidebar = document.querySelector('.sidebar');
-        const content = document.querySelector('.content');
+      const sidebar = document.getElementById('sidebar');
+      const content = document.getElementById('content-area');
 
-        // hide sidebar
-        sidebar.style.display = 'none';
+      // hide sidebar, expand content
+      sidebar.classList.add('collapsed');
+      content.classList.add('expanded');
 
-        // make content full width
-        content.style.width = '100%';
-
-        // load visualization
-        loadVisualization(problemName);
+      // load visualization
+      loadVisualization(problemName);
     }
+
     function loadVisualization(problemName) {
       const contentArea = document.getElementById('content-area');
-      // Replace content with an iframe to your visualization page
+      // Replace content with an iframe to the visualization page,
+      // plus a small floating button to come back to the problem list.
       contentArea.innerHTML = `
+        <button id="backBtn" onclick="showList()">← Back</button>
         <iframe src="visualizations/${problemName}.html"></iframe>
       `;
+    }
+
+    function showList() {
+      // Restore the original intro content and sidebar.
+      location.reload();
     }
   </script>
 

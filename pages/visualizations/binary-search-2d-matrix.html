@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Binary Search on a 2D Matrix</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet"/>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Orbitron',sans-serif; background:#000; color:white; display:flex; height:100vh; overflow:hidden; }
+  .left-panel { width:33%; min-width:250px; background:#111; border-right:2px solid #0ff3; padding:2rem; overflow-y:auto; }
+  .left-panel h2 { color:#0ff; margin-bottom:1rem; font-size:1.6rem; }
+  .tree-container { background:#1a1a1a; border:2px solid #0ff3; border-radius:10px; height:260px; margin-bottom:1rem; overflow:auto; padding:12px; }
+  #matrixGrid { display:inline-grid; gap:4px; }
+  .cell { width:40px; height:34px; display:flex; align-items:center; justify-content:center; font-size:0.7rem; border-radius:6px; background:#0ff1; border:2px solid #0ff; color:#0ff; transition:all 0.3s ease; }
+  .cell.eliminated { opacity:0.2; }
+  .cell.visiting { border-color:gold; background:#ffd7001a; color:gold; }
+  .cell.found { border-color:#0f0; background:#00ff001a; color:#0f0; }
+  .target-box { border:2px solid #0ff3; border-radius:8px; padding:0.5rem; text-align:center; font-size:0.8rem; color:#0ff; margin-top:10px; }
+  .controls { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:1rem; }
+  .btn { background:#0ff3; padding:0.6rem 1rem; border:none; border-radius:8px; cursor:pointer; color:black; font-family:'Orbitron',sans-serif; font-size:0.8rem; transition:background 0.3s; }
+  .btn:hover { background:#0ff; }
+  .btn:disabled { opacity:0.3; cursor:not-allowed; }
+  .speed-row { display:flex; align-items:center; gap:8px; margin-bottom:1.2rem; font-size:0.75rem; color:#0ff; }
+  input[type=range] { flex:1; accent-color:#0ff; }
+  #status { font-size:0.75rem; color:#0ff; min-height:1.2rem; margin-bottom:1rem; text-align:center; }
+  .code-block h3 { color:#0ff; margin-bottom:0.5rem; font-size:1.2rem; }
+  pre { background:#000; padding:1rem; border-radius:8px; border:1px solid #0ff3; color:#0ff; overflow-x:auto; font-size:0.8rem; line-height:1.4rem; }
+  #divider { width:6px; background:#0ff3; cursor:col-resize; flex-shrink:0; }
+  #divider:hover { background:#0ff; }
+  .right-panel { flex:1; min-width:250px; padding:2rem; overflow-y:auto; }
+  .right-panel h1 { color:#0ff; font-size:2rem; margin-bottom:1rem; }
+  .right-panel p { font-size:1rem; color:#ccc; line-height:1.7; margin-bottom:1.2rem; }
+  .right-panel h2 { color:#0ff; font-size:1.3rem; margin:1.5rem 0 0.5rem; }
+  .right-panel ul { margin-left:1.2rem; color:#ccc; line-height:1.8; }
+  .highlight { color:#0ff; font-weight:bold; }
+  .legend { display:flex; gap:1.5rem; flex-wrap:wrap; margin-bottom:1.5rem; font-size:0.75rem; color:#ccc; }
+  .legend-item { display:flex; align-items:center; gap:6px; }
+  .legend-dot { width:14px; height:14px; border-radius:4px; border:2px solid; }
+</style>
+</head>
+<body>
+
+<div class="left-panel">
+  <h2>Binary Search on a 2D Matrix</h2>
+
+  <div class="tree-container" id="treeContainer">
+    <div id="matrixGrid"></div>
+    <div class="target-box" id="targetBox"></div>
+  </div>
+
+  <div id="status">Press "New Matrix" to start</div>
+
+  <div class="controls">
+    <button class="btn" id="newBtn"   onclick="generateMatrix()">New Matrix</button>
+    <button class="btn" id="sortBtn"  onclick="startRun()" disabled>Run ▶</button>
+    <button class="btn" id="stepBtn"  onclick="doStep()"    disabled>Step</button>
+    <button class="btn" id="resetBtn" onclick="resetRun()"  disabled>Reset</button>
+  </div>
+
+  <div class="speed-row">
+    <span>Slow</span>
+    <input type="range" id="speedSlider" min="100" max="1000" value="500" step="50"/>
+    <span>Fast</span>
+  </div>
+
+  <div class="code-block">
+    <h3>2D Matrix Binary Search Code</h3>
+    <pre><code>function searchMatrix(matrix, target) {
+  const rows = matrix.length, cols = matrix[0].length;
+  let lo = 0, hi = rows * cols - 1;
+
+  while (lo <= hi) {
+    const mid = Math.floor((lo + hi) / 2);
+    const row = Math.floor(mid / cols);
+    const col = mid % cols;
+    const val = matrix[row][col];
+
+    if (val === target) return [row, col];
+
+    if (val < target) lo = mid + 1;
+    else               hi = mid - 1;
+  }
+
+  return null;  // not found
+}</code></pre>
+  </div>
+</div>
+
+<div id="divider"></div>
+
+<div class="right-panel">
+  <h1>How Binary Search on a 2D Matrix Works</h1>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="border-color:#0ff"></div>Still in range</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:gold"></div>Current mid</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#0f0"></div>Found</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#0ff; opacity:0.3;"></div>Eliminated</div>
+  </div>
+
+  <p>
+    This works on a matrix where each row is sorted left to right, and the first element of every row is greater than the last element of the row above it. That property means the whole matrix, read row by row, is really just a <span class="highlight">flattened sorted array</span> — so plain binary search still applies, with one extra step to translate a linear index back into a (row, column) pair.
+  </p>
+
+  <h2>Step by step</h2>
+  <ul>
+    <li>Treat the matrix as a single sorted array of length <code>rows × cols</code>, indexed <span class="highlight">0</span> to <code>rows·cols - 1</code>.</li>
+    <li>Binary search that virtual index range exactly like 1D binary search: compute <span class="highlight">mid</span> (gold).</li>
+    <li>Convert mid to real coordinates: <code>row = Math.floor(mid / cols)</code>, <code>col = mid % cols</code>.</li>
+    <li>Compare <code>matrix[row][col]</code> to the target and eliminate half the range, same as before.</li>
+    <li>Stop when found (green), or when the range is empty.</li>
+  </ul>
+
+  <h2>Why not search row-by-row?</h2>
+  <p>
+    Because the matrix is sorted globally (not just within each row), there's no need to narrow down which row first and then binary search within it — one binary search over the flattened index range does the whole job in a single O(log(rows·cols)) pass.
+  </p>
+
+  <h2>Complexity</h2>
+  <p>
+    Time: <span class="highlight">O(log(rows · cols))</span> — one binary search over the full flattened matrix.<br/>
+    Space: <span class="highlight">O(1)</span>.
+  </p>
+
+  <h2>When is it used?</h2>
+  <ul>
+    <li>Any matrix or 2D table stored with this global sorted property (common in some database index layouts).</li>
+    <li>A stepping stone to other 2D search variants, like matrices sorted independently by row <em>and</em> column (which use a different, staircase-walk approach instead).</li>
+  </ul>
+
+  <h2>Compared to other 2D matrix search variants</h2>
+  <ul>
+    <li><span class="highlight">Fully sorted matrix (this):</span> O(log(rows·cols)) — one binary search, since it's really a 1D sorted array in disguise.</li>
+    <li><span class="highlight">Row-wise and column-wise sorted (not globally sorted):</span> can't binary search directly — instead, start from the top-right corner and step left or down each comparison, giving O(rows + cols).</li>
+    <li><span class="highlight">Unsorted matrix:</span> no shortcuts — O(rows · cols) brute-force scan.</li>
+  </ul>
+</div>
+
+<script>
+let matrix = [], rows = 0, cols = 0, target = null;
+let cellEls = [];
+let steps = [], stepIdx = 0, autoTimer = null;
+
+function generateMatrix() {
+  clearTimer();
+  rows = 4; cols = 5;
+  matrix = [];
+  let v = Math.floor(Math.random()*5)+1;
+  for (let r = 0; r < rows; r++) {
+    const row = [];
+    for (let c = 0; c < cols; c++) { row.push(v); v += Math.floor(Math.random()*4)+1; }
+    matrix.push(row);
+  }
+
+  const exists = Math.random() < 0.6;
+  if (exists) {
+    const r = Math.floor(Math.random()*rows), c = Math.floor(Math.random()*cols);
+    target = matrix[r][c];
+  } else {
+    target = matrix[rows-1][cols-1] + Math.floor(Math.random()*10) + 3;
+  }
+
+  drawMatrix();
+  steps = computeSteps();
+  stepIdx = 0;
+  document.getElementById('sortBtn').disabled = false;
+  document.getElementById('stepBtn').disabled = false;
+  document.getElementById('resetBtn').disabled = false;
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  setStatus(`${steps.length} steps ready.`);
+}
+
+function drawMatrix() {
+  const grid = document.getElementById('matrixGrid');
+  grid.innerHTML = '';
+  grid.style.gridTemplateColumns = `repeat(${cols}, 40px)`;
+  cellEls = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.textContent = matrix[r][c];
+      grid.appendChild(cell);
+      cellEls.push(cell); // linear index r*cols+c matches push order
+    }
+  }
+  document.getElementById('targetBox').textContent = `🎯 Target = ${target}`;
+}
+
+function computeSteps() {
+  let lo = 0, hi = rows*cols - 1;
+  const steps = [];
+
+  while (lo <= hi) {
+    const mid = Math.floor((lo+hi)/2);
+    const r = Math.floor(mid/cols), c = mid % cols;
+    const val = matrix[r][c];
+    steps.push({type:'visit', mid, r, c, val});
+
+    if (val === target) {
+      steps.push({type:'found', mid});
+      return steps;
+    } else if (val < target) {
+      steps.push({type:'eliminate', from:lo, to:mid});
+      lo = mid + 1;
+    } else {
+      steps.push({type:'eliminate', from:mid, to:hi});
+      hi = mid - 1;
+    }
+  }
+  steps.push({type:'notfound'});
+  return steps;
+}
+
+function doStep() {
+  if (stepIdx >= steps.length) return;
+  const s = steps[stepIdx++];
+
+  if (s.type === 'visit') {
+    cellEls.forEach(c => c.classList.remove('visiting'));
+    cellEls[s.mid].classList.add('visiting');
+    setStatus(`Checking mid=${s.mid} → matrix[${s.r}][${s.c}] = ${s.val}`);
+  } else if (s.type === 'found') {
+    cellEls[s.mid].classList.remove('visiting');
+    cellEls[s.mid].classList.add('found');
+    setStatus(`✅ Found target!`);
+    clearTimer();
+    document.getElementById('sortBtn').textContent = 'Run ▶';
+  } else if (s.type === 'eliminate') {
+    for (let i = s.from; i <= s.to; i++) cellEls[i].classList.add('eliminated');
+    setStatus(`Eliminated linear indices ${s.from}-${s.to}.`);
+  } else if (s.type === 'notfound') {
+    setStatus(`❌ Target not found in the matrix.`);
+    clearTimer();
+    document.getElementById('sortBtn').textContent = 'Run ▶';
+  }
+}
+
+function startRun() {
+  if (autoTimer) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+  if (stepIdx >= steps.length) return;
+  document.getElementById('sortBtn').textContent = 'Pause ⏸';
+  const delay = 1100 - parseInt(document.getElementById('speedSlider').value);
+  autoTimer = setInterval(() => {
+    if (stepIdx >= steps.length) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+    doStep();
+  }, delay);
+}
+
+function resetRun() {
+  clearTimer();
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  drawMatrix();
+  steps = computeSteps();
+  stepIdx = 0;
+  setStatus(`Reset. ${steps.length} steps.`);
+}
+
+function setStatus(msg) { document.getElementById('status').textContent = msg; }
+function clearTimer() { clearInterval(autoTimer); autoTimer = null; }
+
+const divider = document.getElementById('divider');
+const leftPanel = document.querySelector('.left-panel');
+let isDragging = false;
+divider.addEventListener('mousedown', () => { isDragging = true; document.body.style.userSelect = 'none'; });
+document.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  const w = e.clientX;
+  if (w < 250 || w > window.innerWidth - 250) return;
+  leftPanel.style.width = w + 'px';
+});
+document.addEventListener('mouseup', () => { isDragging = false; document.body.style.userSelect = 'auto'; });
+</script>
+</body>
+</html>

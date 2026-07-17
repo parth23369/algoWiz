@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Radix Sort Visualization</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet"/>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Orbitron', sans-serif; background-color: #000; color: white; display: flex; height: 100vh; overflow: hidden; }
+    .left-panel { width: 33%; min-width:250px; background-color: #111; border-right: 2px solid #0ff3; padding: 2rem; overflow-y: auto; }
+    .left-panel h2 { color: #0ff; margin-bottom: 1rem; font-size: 1.7rem; }
+    .viz-box { background-color: #1a1a1a; border: 2px solid #0ff3; border-radius: 10px; height: 300px; margin-bottom: 1rem; padding: 12px; overflow-y:auto; }
+    .row-label { font-size: 0.62rem; color: #0ff8; margin-bottom: 4px; }
+    .digit-label { font-size:0.7rem; color:#f0f; margin-bottom:6px; }
+    .array-row { display: flex; flex-wrap:wrap; gap: 4px; margin-bottom:10px; }
+    .num-cell { min-width:34px; height:30px; border:2px solid #0ff3; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:0.65rem; color:#0ff; background:#0ff1; transition:all 0.25s ease; }
+    .num-cell.active { border-color:gold; color:gold; background:#ffd7001a; }
+    .buckets { display:grid; grid-template-columns:repeat(5, 1fr); gap:4px; margin-bottom:10px; }
+    .bucket { border:2px solid #0ff3; border-radius:6px; padding:3px; min-height:44px; background:#0ff05; }
+    .bucket-label { font-size:0.55rem; color:#0ff8; text-align:center; margin-bottom:2px; }
+    .bucket-item { font-size:0.6rem; color:#0f0; text-align:center; }
+    .controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; }
+    .btn { background-color: #0ff3; padding: 0.6rem 1rem; border: none; border-radius: 8px; cursor: pointer; color: black; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; transition: background 0.3s; }
+    .btn:hover { background-color: #0ff; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .speed-row { display: flex; align-items: center; gap: 8px; margin-bottom: 1.2rem; font-size: 0.75rem; color: #0ff; }
+    input[type=range] { flex: 1; accent-color: #0ff; }
+    #status { font-size: 0.72rem; color: #0ff; min-height: 1.4rem; margin-bottom: 1rem; text-align: center; }
+    .code-block h3 { color: #0ff; margin-bottom: 0.5rem; font-size: 1.2rem; }
+    pre { background-color: #000; padding: 1rem; border-radius: 8px; border: 1px solid #0ff3; color: #0ff; overflow-x: auto; font-size: 0.8rem; line-height: 1.4rem; }
+    #divider { width: 6px; background: #0ff3; cursor: col-resize; flex-shrink:0; }
+    #divider:hover { background: #0ff; }
+    .right-panel { flex:1; min-width:250px; padding: 2rem; overflow-y: auto; }
+    .right-panel h1 { color: #0ff; font-size: 2rem; margin-bottom: 1rem; }
+    .right-panel p  { font-size: 1rem; color: #ccc; line-height: 1.7; margin-bottom: 1.2rem; }
+    .right-panel h2 { color: #0ff; font-size: 1.3rem; margin: 1.5rem 0 0.5rem; }
+    .right-panel ul { margin-left: 1.2rem; color: #ccc; line-height: 1.8; }
+    .highlight { color: #0ff; font-weight: bold; }
+    .legend { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; font-size: 0.75rem; color: #ccc; }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-dot  { width: 14px; height: 14px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<div class="left-panel">
+  <h2>Radix Sort (LSD)</h2>
+
+  <div class="viz-box" id="vizBox">
+    <div class="digit-label" id="digitLabel"></div>
+    <div class="row-label">Current array order</div>
+    <div class="array-row" id="arrayRow"></div>
+    <div class="row-label">Buckets 0-9 (by current digit)</div>
+    <div class="buckets" id="buckets"></div>
+  </div>
+
+  <div id="status">Press "New Array" to start</div>
+
+  <div class="controls">
+    <button class="btn" id="newBtn"  onclick="generateArray()">New Array</button>
+    <button class="btn" id="sortBtn" onclick="startSort()" disabled>Sort ▶</button>
+    <button class="btn" id="stepBtn" onclick="doStep()"    disabled>Step</button>
+    <button class="btn" id="resetBtn" onclick="resetSort()" disabled>Reset</button>
+  </div>
+
+  <div class="speed-row">
+    <span>Slow</span>
+    <input type="range" id="speedSlider" min="100" max="1000" value="450" step="50"/>
+    <span>Fast</span>
+  </div>
+
+  <div class="code-block">
+    <h3>Radix Sort Code (LSD)</h3>
+    <pre><code>function radixSort(arr) {
+  const maxVal = Math.max(...arr);
+
+  for (let exp = 1; Math.floor(maxVal / exp) > 0; exp *= 10) {
+    arr = countingSortByDigit(arr, exp);
+  }
+  return arr;
+}
+
+function countingSortByDigit(arr, exp) {
+  const buckets = Array.from({length: 10}, () => []);
+
+  for (const num of arr) {
+    const digit = Math.floor(num / exp) % 10;
+    buckets[digit].push(num);      // stable: append, keep relative order
+  }
+
+  return [].concat(...buckets);    // flatten buckets 0 → 9 back into one array
+}</code></pre>
+  </div>
+</div>
+
+<div id="divider"></div>
+
+<div class="right-panel">
+  <h1>How Radix Sort Works</h1>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:gold"></div>Number being bucketed</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#0f0"></div>Sitting in its bucket</div>
+  </div>
+
+  <p>
+    Radix sort sorts numbers digit by digit instead of comparing whole numbers to each other. The <span class="highlight">LSD (least significant digit)</span> variant shown here processes the ones digit first, then tens, then hundreds — and as long as each pass is stable, the array ends up fully sorted once every digit has been processed.
+  </p>
+
+  <h2>Step by step</h2>
+  <ul>
+    <li>Find the maximum number to know how many digit-passes are needed.</li>
+    <li>For the current digit place (ones, tens, hundreds, …), compute each number's digit there: <code>Math.floor(num / exp) % 10</code>.</li>
+    <li>Drop each number into the bucket matching that digit (gold while being placed, green once bucketed) — buckets 0 through 9.</li>
+    <li><strong>Crucially, process numbers in their current array order</strong> when filling buckets — this is what keeps the sort stable.</li>
+    <li>Concatenate the buckets back together in order 0 → 9; this becomes the new array order.</li>
+    <li>Move to the next digit place and repeat, until the digit place exceeds the largest number.</li>
+  </ul>
+
+  <h2>Why does sorting by ones-then-tens-then-hundreds work?</h2>
+  <p>
+    Because each pass is stable, numbers that tie on a more significant digit retain whatever relative order was established by the earlier (less significant) passes — so by the time the most significant digit is processed, the whole number is correctly ordered.
+  </p>
+
+  <h2>Complexity</h2>
+  <p>
+    Time: <span class="highlight">O(d · (n + k))</span> — d digit passes, each an O(n + k) counting sort (k = 10 for base-10 buckets).<br/>
+    Space: <span class="highlight">O(n + k)</span> for the buckets.<br/>
+    Stable: <span class="highlight">Yes</span> — required for correctness, not just a nice property.
+  </p>
+
+  <h2>When is it used?</h2>
+  <p>
+    Great for sorting large sets of fixed-width integers (or strings) — like sorting 32-bit integers, phone numbers, or dates — where the number of digits is small and bounded compared to n.
+  </p>
+
+  <h2>Compared to other sorts</h2>
+  <ul>
+    <li><span class="highlight">Radix Sort:</span> O(d·(n+k)) — can beat O(n log n) comparison sorts when d is small, but doesn't generalize to arbitrary comparable data.</li>
+    <li><span class="highlight">Counting Sort:</span> what each digit-pass of radix sort actually is, applied once to the whole value range instead of digit-by-digit.</li>
+    <li><span class="highlight">Merge/Quick Sort:</span> comparison-based and fully general, but bounded below by O(n log n) — radix sort sidesteps that bound entirely by never comparing whole values.</li>
+  </ul>
+</div>
+
+<script>
+  let array = [], steps = [], stepIdx = 0, autoTimer = null;
+
+  function generateArray() {
+    clearInterval(autoTimer); autoTimer = null;
+    array = [];
+    for (let i = 0; i < 8; i++) array.push(Math.floor(Math.random()*900)+10);
+
+    steps = computeSteps([...array]);
+    stepIdx = 0;
+    drawArray(array, -1);
+    drawBuckets(Array.from({length:10}, () => []));
+    document.getElementById('digitLabel').textContent = '';
+
+    document.getElementById('sortBtn').disabled = false;
+    document.getElementById('stepBtn').disabled = false;
+    document.getElementById('resetBtn').disabled = false;
+    document.getElementById('sortBtn').textContent = 'Sort ▶';
+    document.getElementById('status').textContent = `Array ready. ${steps.length} steps total.`;
+  }
+
+  function computeSteps(arr) {
+    const steps = [];
+    const maxVal = Math.max(...arr);
+    let current = [...arr];
+
+    for (let exp = 1; Math.floor(maxVal/exp) > 0; exp *= 10) {
+      const buckets = Array.from({length:10}, () => []);
+      steps.push({type:'newDigit', exp, arr:[...current]});
+
+      current.forEach(num => {
+        const digit = Math.floor(num/exp) % 10;
+        buckets[digit].push(num);
+        steps.push({type:'bucket', num, digit, buckets: buckets.map(b=>[...b])});
+      });
+
+      current = [].concat(...buckets);
+      steps.push({type:'flatten', arr:[...current]});
+    }
+    steps.push({type:'done', arr:[...current]});
+    return steps;
+  }
+
+  function drawArray(arr, activeVal) {
+    const row = document.getElementById('arrayRow');
+    row.innerHTML = '';
+    arr.forEach(v => {
+      const cell = document.createElement('div');
+      cell.className = 'num-cell' + (v === activeVal ? ' active' : '');
+      cell.textContent = v;
+      row.appendChild(cell);
+    });
+  }
+
+  function drawBuckets(buckets) {
+    const container = document.getElementById('buckets');
+    container.innerHTML = '';
+    buckets.forEach((b, digit) => {
+      const div = document.createElement('div');
+      div.className = 'bucket';
+      div.innerHTML = `<div class="bucket-label">${digit}</div>` +
+        b.map(v => `<div class="bucket-item">${v}</div>`).join('');
+      container.appendChild(div);
+    });
+  }
+
+  function doStep() {
+    if (stepIdx >= steps.length) return;
+    const step = steps[stepIdx++];
+    const st = document.getElementById('status');
+
+    if (step.type === 'newDigit') {
+      drawArray(step.arr, -1);
+      drawBuckets(Array.from({length:10}, () => []));
+      const placeNames = {1:'ones', 10:'tens', 100:'hundreds', 1000:'thousands'};
+      document.getElementById('digitLabel').textContent = `Sorting by ${placeNames[step.exp] || 'digit place ' + step.exp}`;
+      st.textContent = `Starting pass on the ${placeNames[step.exp] || step.exp} digit.`;
+    } else if (step.type === 'bucket') {
+      drawArray(step.arr || [], step.num);
+      drawBuckets(step.buckets);
+      st.textContent = `Number ${step.num} → digit ${step.digit} → bucket ${step.digit}.`;
+    } else if (step.type === 'flatten') {
+      drawArray(step.arr, -1);
+      st.textContent = `Buckets concatenated 0→9 — new array order.`;
+    } else if (step.type === 'done') {
+      drawArray(step.arr, -1);
+      drawBuckets(Array.from({length:10}, () => []));
+      st.textContent = '✅ Sorted!';
+      clearInterval(autoTimer); autoTimer = null;
+      document.getElementById('sortBtn').textContent = 'Sort ▶';
+    }
+  }
+
+  function startSort() {
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; document.getElementById('sortBtn').textContent = 'Sort ▶'; return; }
+    if (stepIdx >= steps.length) return;
+    document.getElementById('sortBtn').textContent = 'Pause ⏸';
+    const delay = 1100 - parseInt(document.getElementById('speedSlider').value);
+    autoTimer = setInterval(() => {
+      if (stepIdx >= steps.length) { clearInterval(autoTimer); autoTimer = null; document.getElementById('sortBtn').textContent = 'Sort ▶'; return; }
+      doStep();
+    }, delay);
+  }
+
+  function resetSort() {
+    clearInterval(autoTimer); autoTimer = null;
+    stepIdx = 0;
+    drawArray(array, -1);
+    drawBuckets(Array.from({length:10}, () => []));
+    document.getElementById('digitLabel').textContent = '';
+    document.getElementById('status').textContent = `Reset. ${steps.length} steps total.`;
+    document.getElementById('sortBtn').textContent = 'Sort ▶';
+  }
+
+  const divider = document.getElementById("divider");
+  const leftPanel = document.querySelector(".left-panel");
+  let isDragging = false;
+  divider.addEventListener("mousedown", () => { isDragging = true; document.body.style.userSelect = "none"; });
+  document.addEventListener("mousemove", (e) => {
+    if (!isDragging) return;
+    let newWidth = e.clientX;
+    if (newWidth < 250 || newWidth > window.innerWidth - 250) return;
+    leftPanel.style.width = newWidth + "px";
+  });
+  document.addEventListener("mouseup", () => { isDragging = false; document.body.style.userSelect = "auto"; });
+</script>
+</body>
+</html>

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Search in Rotated Sorted Array</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet"/>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Orbitron',sans-serif; background:#000; color:white; display:flex; height:100vh; overflow:hidden; }
+  .left-panel { width:33%; min-width:250px; background:#111; border-right:2px solid #0ff3; padding:2rem; overflow-y:auto; }
+  .left-panel h2 { color:#0ff; margin-bottom:1rem; font-size:1.5rem; }
+  .tree-container { background:#1a1a1a; border:2px solid #0ff3; border-radius:10px; height:250px; margin-bottom:1rem; overflow:auto; padding:12px; }
+  .row-label { font-size:0.65rem; color:#0ff8; margin-bottom:6px; }
+  .array-row { display:flex; gap:4px; margin-bottom:6px; }
+  .cell { min-width:34px; height:34px; display:flex; align-items:center; justify-content:center; font-size:0.7rem; border-radius:6px; background:#0ff1; border:2px solid #0ff; color:#0ff; transition:all 0.3s ease; flex-direction:column; position:relative; }
+  .cell.eliminated { opacity:0.2; }
+  .cell.visiting { border-color:gold; background:#ffd7001a; color:gold; }
+  .cell.found { border-color:#0f0; background:#00ff001a; color:#0f0; }
+  .cell.sortedHalf { box-shadow: 0 0 0 2px #f0f inset; }
+  .idx { font-size:0.5rem; color:#0ff8; }
+  .pointer-row { display:flex; gap:4px; margin-bottom:1rem; }
+  .pointer-cell { min-width:34px; height:16px; display:flex; align-items:center; justify-content:center; font-size:0.6rem; }
+  .pointer-cell.L { color:#f0f; }
+  .pointer-cell.R { color:#0ff; }
+  .pointer-cell.M { color:gold; }
+  .target-box { border:2px solid #0ff3; border-radius:8px; padding:0.5rem; text-align:center; font-size:0.78rem; color:#0ff; }
+  .controls { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:1rem; }
+  .btn { background:#0ff3; padding:0.6rem 1rem; border:none; border-radius:8px; cursor:pointer; color:black; font-family:'Orbitron',sans-serif; font-size:0.8rem; transition:background 0.3s; }
+  .btn:hover { background:#0ff; }
+  .btn:disabled { opacity:0.3; cursor:not-allowed; }
+  .speed-row { display:flex; align-items:center; gap:8px; margin-bottom:1.2rem; font-size:0.75rem; color:#0ff; }
+  input[type=range] { flex:1; accent-color:#0ff; }
+  #status { font-size:0.72rem; color:#0ff; min-height:1.6rem; margin-bottom:1rem; text-align:center; }
+  .code-block h3 { color:#0ff; margin-bottom:0.5rem; font-size:1.2rem; }
+  pre { background:#000; padding:1rem; border-radius:8px; border:1px solid #0ff3; color:#0ff; overflow-x:auto; font-size:0.8rem; line-height:1.4rem; }
+  #divider { width:6px; background:#0ff3; cursor:col-resize; flex-shrink:0; }
+  #divider:hover { background:#0ff; }
+  .right-panel { flex:1; min-width:250px; padding:2rem; overflow-y:auto; }
+  .right-panel h1 { color:#0ff; font-size:2rem; margin-bottom:1rem; }
+  .right-panel p { font-size:1rem; color:#ccc; line-height:1.7; margin-bottom:1.2rem; }
+  .right-panel h2 { color:#0ff; font-size:1.3rem; margin:1.5rem 0 0.5rem; }
+  .right-panel ul { margin-left:1.2rem; color:#ccc; line-height:1.8; }
+  .highlight { color:#0ff; font-weight:bold; }
+  .legend { display:flex; gap:1.5rem; flex-wrap:wrap; margin-bottom:1.5rem; font-size:0.75rem; color:#ccc; }
+  .legend-item { display:flex; align-items:center; gap:6px; }
+  .legend-dot { width:14px; height:14px; border-radius:4px; border:2px solid; }
+</style>
+</head>
+<body>
+
+<div class="left-panel">
+  <h2>Search in Rotated Sorted Array</h2>
+
+  <div class="tree-container" id="treeContainer">
+    <div class="row-label">Rotated sorted array (magenta outline = the sorted half)</div>
+    <div class="array-row" id="arrayRow"></div>
+    <div class="pointer-row" id="pointerRow"></div>
+    <div class="target-box" id="targetBox"></div>
+  </div>
+
+  <div id="status">Press "New Array" to start</div>
+
+  <div class="controls">
+    <button class="btn" id="newBtn"   onclick="generateArray()">New Array</button>
+    <button class="btn" id="sortBtn"  onclick="startRun()" disabled>Run ▶</button>
+    <button class="btn" id="stepBtn"  onclick="doStep()"    disabled>Step</button>
+    <button class="btn" id="resetBtn" onclick="resetRun()"  disabled>Reset</button>
+  </div>
+
+  <div class="speed-row">
+    <span>Slow</span>
+    <input type="range" id="speedSlider" min="100" max="1000" value="500" step="50"/>
+    <span>Fast</span>
+  </div>
+
+  <div class="code-block">
+    <h3>Rotated Binary Search Code</h3>
+    <pre><code>function search(arr, target) {
+  let left = 0, right = arr.length - 1;
+
+  while (left <= right) {
+    const mid = Math.floor((left + right) / 2);
+    if (arr[mid] === target) return mid;
+
+    if (arr[left] <= arr[mid]) {
+      // left half is sorted
+      if (arr[left] <= target && target < arr[mid]) right = mid - 1;
+      else                                            left  = mid + 1;
+    } else {
+      // right half is sorted
+      if (arr[mid] < target && target <= arr[right])  left  = mid + 1;
+      else                                             right = mid - 1;
+    }
+  }
+  return -1;
+}</code></pre>
+  </div>
+</div>
+
+<div id="divider"></div>
+
+<div class="right-panel">
+  <h1>How Search in a Rotated Sorted Array Works</h1>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="border-color:gold"></div>Current mid</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#f0f"></div>The half currently known to be sorted</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#0f0"></div>Found</div>
+  </div>
+
+  <p>
+    A rotated sorted array (like <code>[4,5,6,7,0,1,2]</code>) isn't sorted end-to-end, so plain binary search's "compare to mid and go left or right" logic breaks — but here's the trick: <span class="highlight">at least one of the two halves around mid is always fully sorted</span>. Once you know which half that is, you can check in O(1) whether the target could be hiding there.
+  </p>
+
+  <h2>Step by step</h2>
+  <ul>
+    <li>Compute <span class="highlight">mid</span> as usual (gold). If it's the target, done.</li>
+    <li>Compare <code>arr[left]</code> to <code>arr[mid]</code>: if <code>arr[left] &lt;= arr[mid]</code>, the <span class="highlight">left half</span> is sorted (magenta outline); otherwise the <span class="highlight">right half</span> is.</li>
+    <li>If the sorted half is the left one: check whether the target falls inside <code>[arr[left], arr[mid])</code>. If yes, search left; if no, it must be in the other (unsorted-looking) half — search right.</li>
+    <li>Symmetric logic applies if the right half is the sorted one.</li>
+    <li>Repeat until found or the range is empty.</li>
+  </ul>
+
+  <h2>Why this still works in O(log n)</h2>
+  <p>
+    Every step still throws away one full half of the remaining range — the only difference from plain binary search is a slightly smarter test for "which half could possibly contain the target," using the guaranteed-sorted half as a reference point instead of a single ordering assumption over the whole array.
+  </p>
+
+  <h2>Complexity</h2>
+  <p>
+    Time: <span class="highlight">O(log n)</span> — same as standard binary search.<br/>
+    Space: <span class="highlight">O(1)</span>.
+  </p>
+
+  <h2>When is it used?</h2>
+  <ul>
+    <li>Searching in a sorted array that's been circularly shifted (e.g. version histories, ring buffers).</li>
+    <li>Finding the rotation point itself (a close cousin of this problem).</li>
+    <li>A good example of adapting binary search's invariant instead of abandoning it.</li>
+  </ul>
+
+  <h2>Compared to plain binary search</h2>
+  <ul>
+    <li><span class="highlight">Rotated search (this):</span> O(log n), needs one extra check per step to identify the sorted half.</li>
+    <li><span class="highlight">Plain binary search:</span> O(log n), assumes the entire array is sorted from the start.</li>
+    <li><span class="highlight">Linear search fallback:</span> O(n) — always correct regardless of rotation, but loses the logarithmic speedup entirely.</li>
+  </ul>
+</div>
+
+<script>
+let arr = [], target = null;
+let cellEls = [], pointerEls = [];
+let steps = [], stepIdx = 0, autoTimer = null;
+
+function generateArray() {
+  clearTimer();
+  const n = 8;
+  const sorted = [];
+  let v = Math.floor(Math.random()*5)+1;
+  for (let i = 0; i < n; i++) { sorted.push(v); v += Math.floor(Math.random()*6)+1; }
+
+  const pivot = Math.floor(Math.random()*n);
+  arr = sorted.slice(pivot).concat(sorted.slice(0, pivot));
+
+  const exists = Math.random() < 0.65;
+  target = exists ? arr[Math.floor(Math.random()*n)] : (sorted[n-1] + Math.floor(Math.random()*10) + 3);
+
+  drawArray();
+  steps = computeSteps();
+  stepIdx = 0;
+  document.getElementById('sortBtn').disabled = false;
+  document.getElementById('stepBtn').disabled = false;
+  document.getElementById('resetBtn').disabled = false;
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  setStatus(`Array ready (rotated at index ${pivot}). ${steps.length} steps.`);
+}
+
+function drawArray() {
+  const row = document.getElementById('arrayRow');
+  const prow = document.getElementById('pointerRow');
+  row.innerHTML = ''; prow.innerHTML = '';
+  cellEls = []; pointerEls = [];
+
+  arr.forEach((v, idx) => {
+    const c = document.createElement('div');
+    c.className = 'cell';
+    c.innerHTML = `${v}<span class="idx">${idx}</span>`;
+    row.appendChild(c);
+    cellEls.push(c);
+
+    const p = document.createElement('div');
+    p.className = 'pointer-cell';
+    prow.appendChild(p);
+    pointerEls.push(p);
+  });
+
+  document.getElementById('targetBox').textContent = `🎯 Target = ${target}`;
+}
+
+function computeSteps() {
+  let left = 0, right = arr.length - 1;
+  const steps = [];
+
+  while (left <= right) {
+    const mid = Math.floor((left+right)/2);
+    steps.push({type:'visit', left, right, mid});
+
+    if (arr[mid] === target) {
+      steps.push({type:'found', mid});
+      return steps;
+    }
+
+    if (arr[left] <= arr[mid]) {
+      steps.push({type:'sortedHalf', side:'left', left, mid});
+      if (arr[left] <= target && target < arr[mid]) {
+        steps.push({type:'eliminate', from: mid, to: right, reason:'target is in the sorted left half'});
+        right = mid - 1;
+      } else {
+        steps.push({type:'eliminate', from: left, to: mid, reason:'target is not in the sorted left half'});
+        left = mid + 1;
+      }
+    } else {
+      steps.push({type:'sortedHalf', side:'right', mid, right});
+      if (arr[mid] < target && target <= arr[right]) {
+        steps.push({type:'eliminate', from: left, to: mid, reason:'target is in the sorted right half'});
+        left = mid + 1;
+      } else {
+        steps.push({type:'eliminate', from: mid, to: right, reason:'target is not in the sorted right half'});
+        right = mid - 1;
+      }
+    }
+  }
+  steps.push({type:'notfound'});
+  return steps;
+}
+
+function doStep() {
+  if (stepIdx >= steps.length) return;
+  const s = steps[stepIdx++];
+
+  if (s.type === 'visit') {
+    cellEls.forEach(c => { c.classList.remove('visiting'); c.classList.remove('sortedHalf'); });
+    pointerEls.forEach(p => { p.textContent=''; p.className='pointer-cell'; });
+    cellEls[s.mid].classList.add('visiting');
+    pointerEls[s.left].textContent = 'L'; pointerEls[s.left].classList.add('L');
+    pointerEls[s.right].textContent = 'R'; pointerEls[s.right].classList.add('R');
+    pointerEls[s.mid].textContent += 'M'; pointerEls[s.mid].classList.add('M');
+    setStatus(`mid=${s.mid} (value ${arr[s.mid]})…`);
+  } else if (s.type === 'sortedHalf') {
+    const from = s.side === 'left' ? s.left : s.mid;
+    const to   = s.side === 'left' ? s.mid  : s.right;
+    for (let i = from; i <= to; i++) cellEls[i].classList.add('sortedHalf');
+    setStatus(`The ${s.side} half is sorted (outlined).`);
+  } else if (s.type === 'found') {
+    cellEls[s.mid].classList.remove('visiting');
+    cellEls[s.mid].classList.add('found');
+    setStatus(`✅ Found target at index ${s.mid}!`);
+    clearTimer();
+    document.getElementById('sortBtn').textContent = 'Run ▶';
+  } else if (s.type === 'eliminate') {
+    for (let i = s.from; i <= s.to; i++) cellEls[i].classList.add('eliminated');
+    setStatus(`${s.reason} — eliminating indices ${s.from}-${s.to}.`);
+  } else if (s.type === 'notfound') {
+    setStatus(`❌ Target not found in the array.`);
+    clearTimer();
+    document.getElementById('sortBtn').textContent = 'Run ▶';
+  }
+}
+
+function startRun() {
+  if (autoTimer) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+  if (stepIdx >= steps.length) return;
+  document.getElementById('sortBtn').textContent = 'Pause ⏸';
+  const delay = 1100 - parseInt(document.getElementById('speedSlider').value);
+  autoTimer = setInterval(() => {
+    if (stepIdx >= steps.length) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+    doStep();
+  }, delay);
+}
+
+function resetRun() {
+  clearTimer();
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  drawArray();
+  steps = computeSteps();
+  stepIdx = 0;
+  setStatus(`Reset. ${steps.length} steps.`);
+}
+
+function setStatus(msg) { document.getElementById('status').textContent = msg; }
+function clearTimer() { clearInterval(autoTimer); autoTimer = null; }
+
+const divider = document.getElementById('divider');
+const leftPanel = document.querySelector('.left-panel');
+let isDragging = false;
+divider.addEventListener('mousedown', () => { isDragging = true; document.body.style.userSelect = 'none'; });
+document.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  const w = e.clientX;
+  if (w < 250 || w > window.innerWidth - 250) return;
+  leftPanel.style.width = w + 'px';
+});
+document.addEventListener('mouseup', () => { isDragging = false; document.body.style.userSelect = 'auto'; });
+</script>
+</body>
+</html>

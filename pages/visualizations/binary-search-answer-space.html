@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Binary Search on Answer Space - Koko Eating Bananas</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet"/>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Orbitron',sans-serif; background:#000; color:white; display:flex; height:100vh; overflow:hidden; }
+  .left-panel { width:33%; min-width:250px; background:#111; border-right:2px solid #0ff3; padding:2rem; overflow-y:auto; }
+  .left-panel h2 { color:#0ff; margin-bottom:1rem; font-size:1.6rem; }
+  .tree-container { background:#1a1a1a; border:2px solid #0ff3; border-radius:10px; height:260px; margin-bottom:1rem; overflow:auto; padding:14px; }
+  .row-label { font-size:0.65rem; color:#0ff8; margin-bottom:6px; }
+  .piles-row { display:flex; gap:4px; margin-bottom:14px; align-items:flex-end; }
+  .pile { min-width:26px; background:#0ff2; border:2px solid #0ff; border-radius:4px 4px 0 0; display:flex; align-items:flex-start; justify-content:center; font-size:0.6rem; color:#0ff; padding-top:2px; }
+  .h-box { border:2px solid #0ff3; border-radius:8px; padding:0.5rem; font-size:0.75rem; color:#0ff; text-align:center; margin-bottom:14px; }
+  .search-bar-wrap { position:relative; height:50px; border:2px solid #0ff3; border-radius:8px; background:#0ff05; margin-bottom:10px; }
+  .range-fill { position:absolute; top:0; bottom:0; background:#0ff1; border-left:2px solid #0ff5; border-right:2px solid #0ff5; }
+  .tick { position:absolute; top:-18px; font-size:0.6rem; transform:translateX(-50%); white-space:nowrap; }
+  .tick.lo { color:#f0f; }
+  .tick.hi { color:#0ff; }
+  .tick.mid { color:gold; top:18px; }
+  .tick-line { position:absolute; top:0; bottom:0; width:2px; }
+  .tick-line.mid { background:gold; }
+  .answer-box { border:2px solid #0f0; border-radius:8px; padding:0.5rem; font-size:0.75rem; color:#0f0; text-align:center; }
+  .controls { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:1rem; }
+  .btn { background:#0ff3; padding:0.6rem 1rem; border:none; border-radius:8px; cursor:pointer; color:black; font-family:'Orbitron',sans-serif; font-size:0.8rem; transition:background 0.3s; }
+  .btn:hover { background:#0ff; }
+  .btn:disabled { opacity:0.3; cursor:not-allowed; }
+  .speed-row { display:flex; align-items:center; gap:8px; margin-bottom:1.2rem; font-size:0.75rem; color:#0ff; }
+  input[type=range] { flex:1; accent-color:#0ff; }
+  #status { font-size:0.75rem; color:#0ff; min-height:1.2rem; margin-bottom:1rem; text-align:center; }
+  .code-block h3 { color:#0ff; margin-bottom:0.5rem; font-size:1.2rem; }
+  pre { background:#000; padding:1rem; border-radius:8px; border:1px solid #0ff3; color:#0ff; overflow-x:auto; font-size:0.8rem; line-height:1.4rem; }
+  #divider { width:6px; background:#0ff3; cursor:col-resize; flex-shrink:0; }
+  #divider:hover { background:#0ff; }
+  .right-panel { flex:1; min-width:250px; padding:2rem; overflow-y:auto; }
+  .right-panel h1 { color:#0ff; font-size:2rem; margin-bottom:1rem; }
+  .right-panel p { font-size:1rem; color:#ccc; line-height:1.7; margin-bottom:1.2rem; }
+  .right-panel h2 { color:#0ff; font-size:1.3rem; margin:1.5rem 0 0.5rem; }
+  .right-panel ul { margin-left:1.2rem; color:#ccc; line-height:1.8; }
+  .highlight { color:#0ff; font-weight:bold; }
+  .legend { display:flex; gap:1.5rem; flex-wrap:wrap; margin-bottom:1.5rem; font-size:0.75rem; color:#ccc; }
+  .legend-item { display:flex; align-items:center; gap:6px; }
+  .legend-dot { width:14px; height:14px; border-radius:4px; border:2px solid; }
+</style>
+</head>
+<body>
+
+<div class="left-panel">
+  <h2>Binary Search on Answer Space</h2>
+
+  <div class="tree-container" id="treeContainer">
+    <div class="row-label">Banana piles</div>
+    <div class="piles-row" id="pilesRow"></div>
+    <div class="h-box" id="hBox"></div>
+    <div class="row-label">Search space: possible eating speeds k</div>
+    <div class="search-bar-wrap" id="searchBar"></div>
+    <div class="answer-box" id="answerBox">Searching…</div>
+  </div>
+
+  <div id="status">Press "New Piles" to start</div>
+
+  <div class="controls">
+    <button class="btn" id="newBtn"   onclick="generatePiles()">New Piles</button>
+    <button class="btn" id="sortBtn"  onclick="startRun()" disabled>Run ▶</button>
+    <button class="btn" id="stepBtn"  onclick="doStep()"    disabled>Step</button>
+    <button class="btn" id="resetBtn" onclick="resetRun()"  disabled>Reset</button>
+  </div>
+
+  <div class="speed-row">
+    <span>Slow</span>
+    <input type="range" id="speedSlider" min="100" max="1000" value="550" step="50"/>
+    <span>Fast</span>
+  </div>
+
+  <div class="code-block">
+    <h3>Binary Search on Answer Space</h3>
+    <pre><code>function minEatingSpeed(piles, h) {
+  function hoursNeeded(k) {
+    let hours = 0;
+    for (const pile of piles) hours += Math.ceil(pile / k);
+    return hours;
+  }
+
+  let lo = 1, hi = Math.max(...piles);
+
+  while (lo < hi) {
+    const mid = Math.floor((lo + hi) / 2);
+
+    if (hoursNeeded(mid) <= h) {
+      hi = mid;       // mid works — try slower (smaller k)
+    } else {
+      lo = mid + 1;   // mid too slow — need faster (bigger k)
+    }
+  }
+
+  return lo;  // minimum feasible eating speed
+}</code></pre>
+  </div>
+</div>
+
+<div id="divider"></div>
+
+<div class="right-panel">
+  <h1>How Binary Search on Answer Space Works</h1>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="border-color:#f0f"></div>lo</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#0ff"></div>hi</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:gold"></div>mid (speed being tested)</div>
+  </div>
+
+  <p>
+    This isn't searching <em>for</em> a value in an array — it's searching the space of <span class="highlight">possible answers</span> for the smallest one that satisfies a condition. Koko needs to eat all the banana piles within h hours; at any given eating speed k, we can check in O(n) whether that speed is fast enough. The key insight: as k increases, the hours needed only ever decreases — that monotonic relationship is exactly what makes binary search valid here.
+  </p>
+
+  <h2>Step by step</h2>
+  <ul>
+    <li>The answer space is every possible speed <span class="highlight">k</span>, from 1 to the largest pile size (eating faster than the biggest pile is never necessary).</li>
+    <li>Pick <span class="highlight">mid</span> as a candidate speed (gold) and compute the total hours needed at that speed.</li>
+    <li>If the hours needed <span class="highlight">fit within h</span>, this speed works — but maybe a slower speed also works, so try smaller: <code>hi = mid</code>.</li>
+    <li>If it <span class="highlight">doesn't fit</span>, this speed is too slow — we need faster: <code>lo = mid + 1</code>.</li>
+    <li>When <code>lo === hi</code>, that's the minimum feasible speed.</li>
+  </ul>
+
+  <h2>Recognizing this pattern</h2>
+  <p>
+    Whenever a problem asks for the <span class="highlight">minimum (or maximum) value satisfying some condition</span>, and that condition flips from false to true (or vice versa) exactly once as the value increases — a monotonic "yes/no" boundary — binary search on the answer works, even though there's no array being searched at all.
+  </p>
+
+  <h2>Complexity</h2>
+  <p>
+    Time: <span class="highlight">O(n log m)</span> — n piles checked at each of the O(log m) candidate speeds, where m is the largest pile.<br/>
+    Space: <span class="highlight">O(1)</span>.
+  </p>
+
+  <h2>When is it used?</h2>
+  <ul>
+    <li>"Minimum capacity to ship packages within D days."</li>
+    <li>"Smallest divisor so a sum stays under a threshold."</li>
+    <li>Any optimization problem with a fast feasibility check and a monotonic answer boundary.</li>
+  </ul>
+
+  <h2>Compared to plain binary search</h2>
+  <ul>
+    <li><span class="highlight">Binary search on answer space (this):</span> searches a conceptual range of candidate answers, using a feasibility check instead of an array lookup.</li>
+    <li><span class="highlight">Classic binary search:</span> searches an actual sorted array for an exact matching element.</li>
+    <li>Both rely on the same core idea — a comparison that reliably eliminates half the remaining possibilities.</li>
+  </ul>
+</div>
+
+<script>
+let piles = [], h = 0;
+let steps = [], stepIdx = 0, autoTimer = null;
+let maxPile = 0;
+
+function generatePiles() {
+  clearTimer();
+  const n = 6;
+  piles = Array.from({length:n}, () => Math.floor(Math.random()*25)+5);
+  maxPile = Math.max(...piles);
+  h = piles.length + Math.floor(Math.random()*(maxPile));
+
+  drawPiles();
+  steps = computeSteps();
+  stepIdx = 0;
+  document.getElementById('sortBtn').disabled = false;
+  document.getElementById('stepBtn').disabled = false;
+  document.getElementById('resetBtn').disabled = false;
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  setStatus(`${steps.length} steps ready.`);
+}
+
+function drawPiles() {
+  const row = document.getElementById('pilesRow');
+  row.innerHTML = '';
+  const maxH = 60;
+  piles.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'pile';
+    div.style.height = `${(p/maxPile)*maxH + 14}px`;
+    div.textContent = p;
+    row.appendChild(div);
+  });
+  document.getElementById('hBox').textContent = `Hours allowed (h) = ${h}`;
+  document.getElementById('answerBox').textContent = 'Searching…';
+  drawBar(1, maxPile, null);
+}
+
+function drawBar(lo, hi, mid) {
+  const bar = document.getElementById('searchBar');
+  bar.innerHTML = '';
+  const range = maxPile - 1 || 1;
+  const pct = v => ((v-1)/range)*100;
+
+  const fill = document.createElement('div');
+  fill.className = 'range-fill';
+  fill.style.left = pct(lo)+'%';
+  fill.style.width = Math.max(pct(hi)-pct(lo),1)+'%';
+  bar.appendChild(fill);
+
+  const loTick = document.createElement('div');
+  loTick.className = 'tick lo';
+  loTick.style.left = pct(lo)+'%';
+  loTick.textContent = `lo=${lo}`;
+  bar.appendChild(loTick);
+
+  const hiTick = document.createElement('div');
+  hiTick.className = 'tick hi';
+  hiTick.style.left = pct(hi)+'%';
+  hiTick.textContent = `hi=${hi}`;
+  bar.appendChild(hiTick);
+
+  if (mid !== null) {
+    const midLine = document.createElement('div');
+    midLine.className = 'tick-line mid';
+    midLine.style.left = pct(mid)+'%';
+    bar.appendChild(midLine);
+
+    const midTick = document.createElement('div');
+    midTick.className = 'tick mid';
+    midTick.style.left = pct(mid)+'%';
+    midTick.textContent = `mid=${mid}`;
+    bar.appendChild(midTick);
+  }
+}
+
+function hoursNeeded(k) {
+  return piles.reduce((sum, p) => sum + Math.ceil(p/k), 0);
+}
+
+function computeSteps() {
+  let lo = 1, hi = maxPile;
+  const steps = [];
+
+  while (lo < hi) {
+    const mid = Math.floor((lo+hi)/2);
+    const hours = hoursNeeded(mid);
+    steps.push({type:'visit', lo, hi, mid, hours});
+
+    if (hours <= h) {
+      hi = mid;
+      steps.push({type:'feasible', lo, hi});
+    } else {
+      lo = mid + 1;
+      steps.push({type:'infeasible', lo, hi});
+    }
+  }
+
+  steps.push({type:'finish', answer: lo});
+  return steps;
+}
+
+function doStep() {
+  if (stepIdx >= steps.length) return;
+  const s = steps[stepIdx++];
+
+  if (s.type === 'visit') {
+    drawBar(s.lo, s.hi, s.mid);
+    setStatus(`Testing speed k=${s.mid}: needs ${s.hours} hours (limit ${h})`);
+  } else if (s.type === 'feasible') {
+    drawBar(s.lo, s.hi, null);
+    setStatus(`Fits within ${h} hours — try a slower speed. hi = ${s.hi}`);
+  } else if (s.type === 'infeasible') {
+    drawBar(s.lo, s.hi, null);
+    setStatus(`Too slow, needs more than ${h} hours — go faster. lo = ${s.lo}`);
+  } else if (s.type === 'finish') {
+    document.getElementById('answerBox').textContent = `✅ Minimum eating speed = ${s.answer}`;
+    setStatus(`Done.`);
+    clearTimer();
+    document.getElementById('sortBtn').textContent = 'Run ▶';
+  }
+}
+
+function startRun() {
+  if (autoTimer) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+  if (stepIdx >= steps.length) return;
+  document.getElementById('sortBtn').textContent = 'Pause ⏸';
+  const delay = 1100 - parseInt(document.getElementById('speedSlider').value);
+  autoTimer = setInterval(() => {
+    if (stepIdx >= steps.length) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+    doStep();
+  }, delay);
+}
+
+function resetRun() {
+  clearTimer();
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  drawPiles();
+  steps = computeSteps();
+  stepIdx = 0;
+  setStatus(`Reset. ${steps.length} steps.`);
+}
+
+function setStatus(msg) { document.getElementById('status').textContent = msg; }
+function clearTimer() { clearInterval(autoTimer); autoTimer = null; }
+
+const divider = document.getElementById('divider');
+const leftPanel = document.querySelector('.left-panel');
+let isDragging = false;
+divider.addEventListener('mousedown', () => { isDragging = true; document.body.style.userSelect = 'none'; });
+document.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  const w = e.clientX;
+  if (w < 250 || w > window.innerWidth - 250) return;
+  leftPanel.style.width = w + 'px';
+});
+document.addEventListener('mouseup', () => { isDragging = false; document.body.style.userSelect = 'auto'; });
+</script>
+</body>
+</html>

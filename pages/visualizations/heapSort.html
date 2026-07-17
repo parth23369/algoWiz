@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Heap Sort Visualization</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet"/>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Orbitron', sans-serif; background-color: #000; color: white; display: flex; height: 100vh; overflow: hidden; }
+    .left-panel { width: 33%; min-width:250px; background-color: #111; border-right: 2px solid #0ff3; padding: 2rem; overflow-y: auto; }
+    .left-panel h2 { color: #0ff; margin-bottom: 1.5rem; font-size: 1.8rem; }
+    .viz-box { background-color: #1a1a1a; border: 2px solid #0ff3; border-radius: 10px; height: 250px; margin-bottom: 1rem; padding: 1rem; display: flex; align-items: flex-end; justify-content: center; gap: 6px; }
+    .bar { width: 30px; border-radius: 4px 4px 0 0; background-color: #0ff; display: flex; align-items: flex-start; justify-content: center; padding-top: 4px; font-size: 0.7rem; color: #000; transition: height 0.25s ease, background-color 0.25s ease, opacity 0.25s ease; }
+    .bar.outheap { opacity: 0.35; }
+    .controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; }
+    .btn { background-color: #0ff3; padding: 0.6rem 1rem; border: none; border-radius: 8px; cursor: pointer; color: black; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; transition: background 0.3s; }
+    .btn:hover { background-color: #0ff; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .speed-row { display: flex; align-items: center; gap: 8px; margin-bottom: 1.2rem; font-size: 0.75rem; color: #0ff; }
+    input[type=range] { flex: 1; accent-color: #0ff; }
+    #status { font-size: 0.75rem; color: #0ff; min-height: 1.2rem; margin-bottom: 1rem; text-align: center; }
+    .code-block h3 { color: #0ff; margin-bottom: 0.5rem; font-size: 1.2rem; }
+    pre { background-color: #000; padding: 1rem; border-radius: 8px; border: 1px solid #0ff3; color: #0ff; overflow-x: auto; font-size: 0.8rem; line-height: 1.4rem; }
+    #divider { width: 6px; background: #0ff3; cursor: col-resize; flex-shrink:0; }
+    #divider:hover { background: #0ff; }
+    .right-panel { flex:1; min-width:250px; padding: 2rem; overflow-y: auto; }
+    .right-panel h1 { color: #0ff; font-size: 2rem; margin-bottom: 1rem; }
+    .right-panel p  { font-size: 1rem; color: #ccc; line-height: 1.7; margin-bottom: 1.2rem; }
+    .right-panel h2 { color: #0ff; font-size: 1.3rem; margin: 1.5rem 0 0.5rem; }
+    .right-panel ul { margin-left: 1.2rem; color: #ccc; line-height: 1.8; }
+    .highlight { color: #0ff; font-weight: bold; }
+    .legend { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; font-size: 0.75rem; color: #ccc; }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-dot  { width: 14px; height: 14px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<div class="left-panel">
+  <h2>Heap Sort</h2>
+
+  <div class="viz-box" id="vizBox"></div>
+
+  <div id="status">Press "New Array" to start</div>
+
+  <div class="controls">
+    <button class="btn" id="newBtn"  onclick="generateArray()">New Array</button>
+    <button class="btn" id="sortBtn" onclick="startSort()" disabled>Sort ▶</button>
+    <button class="btn" id="stepBtn" onclick="doStep()"    disabled>Step</button>
+    <button class="btn" id="resetBtn" onclick="resetSort()" disabled>Reset</button>
+  </div>
+
+  <div class="speed-row">
+    <span>Slow</span>
+    <input type="range" id="speedSlider" min="100" max="1000" value="500" step="50"/>
+    <span>Fast</span>
+  </div>
+
+  <div class="code-block">
+    <h3>Heap Sort Code</h3>
+    <pre><code>function heapSort(arr) {
+  const n = arr.length;
+
+  // Build a max heap
+  for (let i = Math.floor(n/2) - 1; i >= 0; i--) {
+    heapify(arr, n, i);
+  }
+
+  // Repeatedly move the max to the end, shrink the heap
+  for (let end = n - 1; end > 0; end--) {
+    [arr[0], arr[end]] = [arr[end], arr[0]];
+    heapify(arr, end, 0);
+  }
+  return arr;
+}
+
+function heapify(arr, heapSize, root) {
+  let largest = root;
+  const left  = 2*root + 1, right = 2*root + 2;
+
+  if (left  < heapSize && arr[left]  > arr[largest]) largest = left;
+  if (right < heapSize && arr[right] > arr[largest]) largest = right;
+
+  if (largest !== root) {
+    [arr[root], arr[largest]] = [arr[largest], arr[root]];
+    heapify(arr, heapSize, largest);   // sift down
+  }
+}</code></pre>
+  </div>
+</div>
+
+<div id="divider"></div>
+
+<div class="right-panel">
+  <h1>How Heap Sort Works</h1>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#0ff"></div>In the heap</div>
+    <div class="legend-item"><div class="legend-dot" style="background:yellow"></div>Comparing parent/children</div>
+    <div class="legend-item"><div class="legend-dot" style="background:red"></div>Being swapped</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#0f0"></div>Sorted (final position)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#0ff; opacity:0.35;"></div>Outside the heap</div>
+  </div>
+
+  <p>
+    Heap sort treats the array as a binary tree stored implicitly in a flat list, where each parent's children live at indices <code>2i+1</code> and <code>2i+2</code>. First it rearranges the array into a <span class="highlight">max heap</span> (every parent ≥ its children), then repeatedly pulls the maximum (always at the root) out to the end.
+  </p>
+
+  <h2>Step by step</h2>
+  <ul>
+    <li><strong>Build the heap:</strong> starting from the last non-leaf node and working backward to the root, <span class="highlight">heapify</span> each subtree — compare a node to its children (yellow) and swap down (red) if a child is bigger, repeating until that subtree satisfies the max-heap property.</li>
+    <li><strong>Extract the max:</strong> the largest element is always at index 0. Swap it with the last element of the current heap (red), which places it in its final sorted spot (green).</li>
+    <li><strong>Shrink and re-heapify:</strong> reduce the heap size by one (dimming that final element out of the heap) and heapify from the root again to restore the max-heap property.</li>
+    <li>Repeat extraction until the heap is empty — one element at a time, always sorted.</li>
+  </ul>
+
+  <h2>Complexity</h2>
+  <p>
+    Time: <span class="highlight">O(n log n)</span> — building the heap is O(n), and each of the n extractions costs O(log n) to re-heapify.<br/>
+    Space: <span class="highlight">O(1)</span> — sorts in place, no extra array needed (unlike merge sort).<br/>
+    Stable: <span class="highlight">No</span> — swaps during heapify can reorder equal elements.
+  </p>
+
+  <h2>When is it used?</h2>
+  <p>
+    Guarantees O(n log n) even in the worst case (unlike quicksort, which can degrade to O(n²)), while using no extra memory (unlike merge sort). A solid choice when worst-case time guarantees and memory constraints both matter.
+  </p>
+
+  <h2>Compared to other sorts</h2>
+  <ul>
+    <li><span class="highlight">Heap Sort:</span> O(n log n) guaranteed, O(1) space — not stable, and typically slower in practice than quicksort due to poor cache locality.</li>
+    <li><span class="highlight">Quick Sort:</span> O(n log n) average but O(n²) worst case — usually faster in practice, in-place, not stable.</li>
+    <li><span class="highlight">Merge Sort:</span> O(n log n) guaranteed like heap sort, and stable — but needs O(n) extra space where heap sort needs none.</li>
+  </ul>
+</div>
+
+<script>
+  let array = [], steps = [], stepIdx = 0, autoTimer = null;
+
+  function generateArray() {
+    clearInterval(autoTimer); autoTimer = null;
+    array = [];
+    for (let i = 0; i < 10; i++) array.push(Math.floor(Math.random()*90)+10);
+
+    steps = computeSteps([...array]);
+    stepIdx = 0;
+    drawBars(array, [], [], array.length);
+
+    document.getElementById('sortBtn').disabled = false;
+    document.getElementById('stepBtn').disabled = false;
+    document.getElementById('resetBtn').disabled = false;
+    document.getElementById('sortBtn').textContent = 'Sort ▶';
+    document.getElementById('status').textContent = `Array ready. ${steps.length} steps total.`;
+  }
+
+  function computeSteps(arr) {
+    const steps = [];
+    const n = arr.length;
+
+    function heapify(heapSize, root) {
+      let largest = root;
+      const left = 2*root+1, right = 2*root+2;
+      steps.push({type:'compare', arr:[...arr], idxs:[root, left, right].filter(i=>i<heapSize), heapSize});
+
+      if (left < heapSize && arr[left] > arr[largest]) largest = left;
+      if (right < heapSize && arr[right] > arr[largest]) largest = right;
+
+      if (largest !== root) {
+        [arr[root], arr[largest]] = [arr[largest], arr[root]];
+        steps.push({type:'swap', arr:[...arr], idxs:[root, largest], heapSize});
+        heapify(heapSize, largest);
+      }
+    }
+
+    for (let i = Math.floor(n/2)-1; i >= 0; i--) heapify(n, i);
+    steps.push({type:'heapBuilt', arr:[...arr], heapSize:n});
+
+    for (let end = n-1; end > 0; end--) {
+      [arr[0], arr[end]] = [arr[end], arr[0]];
+      steps.push({type:'extract', arr:[...arr], idxs:[0,end], heapSize:end});
+      heapify(end, 0);
+    }
+    steps.push({type:'done', arr:[...arr], sorted:[...Array(n).keys()]});
+    return steps;
+  }
+
+  function drawBars(arr, highlightIdxs, sorted, heapSize, colorType) {
+    const vizBox = document.getElementById('vizBox');
+    vizBox.innerHTML = '';
+    const maxVal = Math.max(...arr);
+    arr.forEach((value, index) => {
+      const bar = document.createElement('div');
+      bar.className = 'bar';
+      if (heapSize !== undefined && index >= heapSize) bar.classList.add('outheap');
+      bar.style.height = Math.round((value/maxVal)*200) + 'px';
+      if (sorted && sorted.includes(index)) bar.style.backgroundColor = '#0f0';
+      else if (highlightIdxs && highlightIdxs.includes(index)) bar.style.backgroundColor = colorType === 'swap' ? 'red' : 'yellow';
+      else bar.style.backgroundColor = '#0ff';
+      bar.textContent = value;
+      vizBox.appendChild(bar);
+    });
+  }
+
+  function doStep() {
+    if (stepIdx >= steps.length) return;
+    const step = steps[stepIdx++];
+    const st = document.getElementById('status');
+
+    if (step.type === 'compare') {
+      drawBars(step.arr, step.idxs, [], step.heapSize, 'compare');
+      st.textContent = `Comparing parent/children at indices ${step.idxs.join(', ')}.`;
+    } else if (step.type === 'swap') {
+      drawBars(step.arr, step.idxs, [], step.heapSize, 'swap');
+      st.textContent = `Swapping indices ${step.idxs[0]} and ${step.idxs[1]} — sifting down.`;
+    } else if (step.type === 'heapBuilt') {
+      drawBars(step.arr, [], [], step.heapSize);
+      st.textContent = `Max heap built.`;
+    } else if (step.type === 'extract') {
+      drawBars(step.arr, [step.idxs[1]], [step.idxs[1]], step.heapSize, 'swap');
+      st.textContent = `Moved max to index ${step.idxs[1]} — now in final position.`;
+    } else if (step.type === 'done') {
+      drawBars(step.arr, [], step.sorted, step.arr.length);
+      st.textContent = '✅ Sorted!';
+      clearInterval(autoTimer); autoTimer = null;
+      document.getElementById('sortBtn').textContent = 'Sort ▶';
+    }
+  }
+
+  function startSort() {
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; document.getElementById('sortBtn').textContent = 'Sort ▶'; return; }
+    if (stepIdx >= steps.length) return;
+    document.getElementById('sortBtn').textContent = 'Pause ⏸';
+    const delay = 1100 - parseInt(document.getElementById('speedSlider').value);
+    autoTimer = setInterval(() => {
+      if (stepIdx >= steps.length) { clearInterval(autoTimer); autoTimer = null; document.getElementById('sortBtn').textContent = 'Sort ▶'; return; }
+      doStep();
+    }, delay);
+  }
+
+  function resetSort() {
+    clearInterval(autoTimer); autoTimer = null;
+    stepIdx = 0;
+    drawBars(array, [], [], array.length);
+    document.getElementById('status').textContent = `Reset. ${steps.length} steps total.`;
+    document.getElementById('sortBtn').textContent = 'Sort ▶';
+  }
+
+  const divider = document.getElementById("divider");
+  const leftPanel = document.querySelector(".left-panel");
+  let isDragging = false;
+  divider.addEventListener("mousedown", () => { isDragging = true; document.body.style.userSelect = "none"; });
+  document.addEventListener("mousemove", (e) => {
+    if (!isDragging) return;
+    let newWidth = e.clientX;
+    if (newWidth < 250 || newWidth > window.innerWidth - 250) return;
+    leftPanel.style.width = newWidth + "px";
+  });
+  document.addEventListener("mouseup", () => { isDragging = false; document.body.style.userSelect = "auto"; });
+</script>
+</body>
+</html>

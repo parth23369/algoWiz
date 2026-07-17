@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>N-Queens - Backtracking</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet"/>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Orbitron',sans-serif; background:#000; color:white; display:flex; height:100vh; overflow:hidden; }
+  .left-panel { width:33%; min-width:250px; background:#111; border-right:2px solid #0ff3; padding:2rem; overflow-y:auto; }
+  .left-panel h2 { color:#0ff; margin-bottom:1rem; font-size:1.7rem; }
+  .tree-container { background:#1a1a1a; border:2px solid #0ff3; border-radius:10px; height:260px; margin-bottom:1rem; overflow:auto; padding:12px; display:flex; align-items:center; justify-content:center; }
+  #board { display:inline-grid; gap:3px; }
+  .cell { width:38px; height:38px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; border-radius:4px; background:#0ff1; border:2px solid #0ff3; color:#0ff; transition:all 0.3s ease; }
+  .cell.visiting { border-color:gold; background:#ffd7001a; }
+  .cell.queen { border-color:#0f0; background:#00ff001a; color:#0f0; }
+  .cell.unsafe { border-color:#e24b4a; background:#e24b4a1a; }
+  .solutions-box { font-size:0.7rem; color:#0f0; text-align:center; margin-bottom:0.6rem; }
+  .controls { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:1rem; }
+  .btn { background:#0ff3; padding:0.6rem 1rem; border:none; border-radius:8px; cursor:pointer; color:black; font-family:'Orbitron',sans-serif; font-size:0.8rem; transition:background 0.3s; }
+  .btn:hover { background:#0ff; }
+  .btn:disabled { opacity:0.3; cursor:not-allowed; }
+  .speed-row { display:flex; align-items:center; gap:8px; margin-bottom:1.2rem; font-size:0.75rem; color:#0ff; }
+  input[type=range] { flex:1; accent-color:#0ff; }
+  #status { font-size:0.72rem; color:#0ff; min-height:1.4rem; margin-bottom:1rem; text-align:center; }
+  .code-block h3 { color:#0ff; margin-bottom:0.5rem; font-size:1.2rem; }
+  pre { background:#000; padding:1rem; border-radius:8px; border:1px solid #0ff3; color:#0ff; overflow-x:auto; font-size:0.8rem; line-height:1.4rem; }
+  #divider { width:6px; background:#0ff3; cursor:col-resize; flex-shrink:0; }
+  #divider:hover { background:#0ff; }
+  .right-panel { flex:1; min-width:250px; padding:2rem; overflow-y:auto; }
+  .right-panel h1 { color:#0ff; font-size:2rem; margin-bottom:1rem; }
+  .right-panel p { font-size:1rem; color:#ccc; line-height:1.7; margin-bottom:1.2rem; }
+  .right-panel h2 { color:#0ff; font-size:1.3rem; margin:1.5rem 0 0.5rem; }
+  .right-panel ul { margin-left:1.2rem; color:#ccc; line-height:1.8; }
+  .highlight { color:#0ff; font-weight:bold; }
+  .legend { display:flex; gap:1.5rem; flex-wrap:wrap; margin-bottom:1.5rem; font-size:0.75rem; color:#ccc; }
+  .legend-item { display:flex; align-items:center; gap:6px; }
+  .legend-dot { width:14px; height:14px; border-radius:4px; border:2px solid; }
+</style>
+</head>
+<body>
+
+<div class="left-panel">
+  <h2>N-Queens (Backtracking)</h2>
+
+  <div class="tree-container" id="treeContainer">
+    <div id="board"></div>
+  </div>
+
+  <div class="solutions-box" id="solutionsBox"></div>
+  <div id="status">Press "New Board" to start</div>
+
+  <div class="controls">
+    <button class="btn" id="newBtn"   onclick="generateBoard()">New Board</button>
+    <button class="btn" id="sortBtn"  onclick="startRun()" disabled>Run ▶</button>
+    <button class="btn" id="stepBtn"  onclick="doStep()"    disabled>Step</button>
+    <button class="btn" id="resetBtn" onclick="resetRun()"  disabled>Reset</button>
+  </div>
+
+  <div class="speed-row">
+    <span>Slow</span>
+    <input type="range" id="speedSlider" min="50" max="800" value="200" step="25"/>
+    <span>Fast</span>
+  </div>
+
+  <div class="code-block">
+    <h3>Backtracking Code</h3>
+    <pre><code>function solveNQueens(n) {
+  const cols = new Set(), diag1 = new Set(), diag2 = new Set();
+  const placement = new Array(n).fill(-1);
+  const solutions = [];
+
+  function isSafe(row, col) {
+    return !cols.has(col) && !diag1.has(row-col) && !diag2.has(row+col);
+  }
+
+  function backtrack(row) {
+    if (row === n) { solutions.push([...placement]); return; }
+
+    for (let col = 0; col < n; col++) {
+      if (!isSafe(row, col)) continue;      // prune
+
+      placement[row] = col;
+      cols.add(col); diag1.add(row-col); diag2.add(row+col);
+
+      backtrack(row + 1);                    // recurse
+
+      cols.delete(col); diag1.delete(row-col); diag2.delete(row+col);
+      placement[row] = -1;                   // undo — backtrack
+    }
+  }
+
+  backtrack(0);
+  return solutions;
+}</code></pre>
+  </div>
+</div>
+
+<div id="divider"></div>
+
+<div class="right-panel">
+  <h1>How N-Queens Backtracking Works</h1>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="border-color:gold"></div>Trying this cell</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#0f0"></div>Queen placed</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#e24b4a"></div>Unsafe — attacked</div>
+  </div>
+
+  <p>
+    N-Queens asks: can you place N queens on an N×N board so that no two attack each other (no shared row, column, or diagonal)? Backtracking solves this by placing queens one row at a time, and the moment a placement becomes impossible, undoing it and trying the next option — instead of generating every possible arrangement up front.
+  </p>
+
+  <h2>Step by step</h2>
+  <ul>
+    <li>Work one row at a time. For the current row, try each column from left to right (gold).</li>
+    <li>Check if placing a queen there conflicts with any queen already placed (same column, or either diagonal).</li>
+    <li>If it's <span class="highlight">unsafe</span> (red), skip this column immediately — this is <span class="highlight">pruning</span>: never even considering the invalid subtree.</li>
+    <li>If it's <span class="highlight">safe</span>, place the queen (green) and recurse into the next row.</li>
+    <li>If every row gets a queen, that's a complete solution — record it.</li>
+    <li>If a row runs out of safe columns, <span class="highlight">backtrack</span>: remove the queen from the previous row and try its next column.</li>
+  </ul>
+
+  <h2>Why backtracking instead of brute force?</h2>
+  <p>
+    Checking every possible placement of N queens on N² squares would be astronomically expensive. Backtracking prunes an entire subtree the instant a placement is invalid — most invalid branches are cut off after just one or two rows, long before wasting time exploring deeper.
+  </p>
+
+  <h2>Complexity</h2>
+  <p>
+    Time: <span class="highlight">O(N!)</span> in the worst case (much better in practice due to pruning).<br/>
+    Space: <span class="highlight">O(N)</span> for the column/diagonal tracking sets and the recursion stack.
+  </p>
+
+  <h2>When is it used?</h2>
+  <ul>
+    <li>Constraint satisfaction problems generally (Sudoku, map coloring).</li>
+    <li>Any "place items so no two conflict" scheduling or layout problem.</li>
+  </ul>
+
+  <h2>Compared to other search strategies</h2>
+  <ul>
+    <li><span class="highlight">Backtracking (this):</span> builds a solution incrementally, abandoning ("pruning") a partial solution the instant it can't possibly succeed.</li>
+    <li><span class="highlight">Brute force:</span> generates every possible full placement first, then checks validity — wildly wasteful since it explores doomed branches to completion.</li>
+    <li><span class="highlight">Dynamic programming:</span> doesn't apply well here — there's no useful overlapping-subproblem structure to cache, since each row's valid choices depend on the entire specific path taken so far.</li>
+  </ul>
+</div>
+
+<script>
+let n = 4;
+let boardCells = [];
+let steps = [], stepIdx = 0, autoTimer = null;
+
+function generateBoard() {
+  clearTimer();
+  drawBoard();
+  document.getElementById('solutionsBox').textContent = '';
+  steps = computeSteps();
+  stepIdx = 0;
+  document.getElementById('sortBtn').disabled = false;
+  document.getElementById('stepBtn').disabled = false;
+  document.getElementById('resetBtn').disabled = false;
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  setStatus(`${n}x${n} board. ${steps.length} steps ready.`);
+}
+
+function drawBoard() {
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+  board.style.gridTemplateColumns = `repeat(${n}, 38px)`;
+  boardCells = [];
+  for (let r = 0; r < n; r++) {
+    boardCells[r] = [];
+    for (let c = 0; c < n; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      board.appendChild(cell);
+      boardCells[r][c] = cell;
+    }
+  }
+}
+
+function clearRowVisuals(row) {
+  for (let c = 0; c < n; c++) boardCells[row][c].classList.remove('visiting','unsafe');
+}
+
+function computeSteps() {
+  const cols = new Set(), diag1 = new Set(), diag2 = new Set();
+  const placement = new Array(n).fill(-1);
+  const steps = [];
+  let solutionCount = 0;
+
+  function isSafe(row, col) {
+    return !cols.has(col) && !diag1.has(row-col) && !diag2.has(row+col);
+  }
+
+  function backtrack(row) {
+    if (row === n) {
+      solutionCount++;
+      steps.push({type:'solution', placement: placement.slice(), count: solutionCount});
+      return;
+    }
+
+    for (let col = 0; col < n; col++) {
+      steps.push({type:'try', row, col});
+      if (!isSafe(row, col)) {
+        steps.push({type:'unsafe', row, col});
+        continue;
+      }
+      placement[row] = col;
+      cols.add(col); diag1.add(row-col); diag2.add(row+col);
+      steps.push({type:'place', row, col});
+
+      backtrack(row+1);
+
+      cols.delete(col); diag1.delete(row-col); diag2.delete(row+col);
+      placement[row] = -1;
+      steps.push({type:'backtrack', row, col});
+    }
+  }
+
+  backtrack(0);
+  steps.push({type:'finish', total: solutionCount});
+  return steps;
+}
+
+function doStep() {
+  if (stepIdx >= steps.length) return;
+  const s = steps[stepIdx++];
+
+  if (s.type === 'try') {
+    boardCells[s.row][s.col].classList.add('visiting');
+    setStatus(`Trying row ${s.row}, col ${s.col}…`);
+  } else if (s.type === 'unsafe') {
+    boardCells[s.row][s.col].classList.remove('visiting');
+    boardCells[s.row][s.col].classList.add('unsafe');
+    setStatus(`Unsafe — attacked by an existing queen. Pruned.`);
+  } else if (s.type === 'place') {
+    boardCells[s.row][s.col].classList.remove('visiting','unsafe');
+    boardCells[s.row][s.col].classList.add('queen');
+    setStatus(`Queen placed at row ${s.row}, col ${s.col}.`);
+  } else if (s.type === 'backtrack') {
+    boardCells[s.row][s.col].classList.remove('queen');
+    setStatus(`Backtracking — removing queen from row ${s.row}.`);
+  } else if (s.type === 'solution') {
+    document.getElementById('solutionsBox').textContent = `Solutions found so far: ${s.count}`;
+    setStatus(`✅ Full solution found! (#${s.count})`);
+  } else if (s.type === 'finish') {
+    setStatus(`Done — ${s.total} total solution(s) for N=${n}.`);
+    clearTimer();
+    document.getElementById('sortBtn').textContent = 'Run ▶';
+  }
+}
+
+function startRun() {
+  if (autoTimer) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+  if (stepIdx >= steps.length) return;
+  document.getElementById('sortBtn').textContent = 'Pause ⏸';
+  const delay = 850 - parseInt(document.getElementById('speedSlider').value);
+  autoTimer = setInterval(() => {
+    if (stepIdx >= steps.length) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+    doStep();
+  }, delay);
+}
+
+function resetRun() {
+  clearTimer();
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  drawBoard();
+  document.getElementById('solutionsBox').textContent = '';
+  steps = computeSteps();
+  stepIdx = 0;
+  setStatus(`Reset. ${steps.length} steps ready.`);
+}
+
+function setStatus(msg) { document.getElementById('status').textContent = msg; }
+function clearTimer() { clearInterval(autoTimer); autoTimer = null; }
+
+const divider = document.getElementById('divider');
+const leftPanel = document.querySelector('.left-panel');
+let isDragging = false;
+divider.addEventListener('mousedown', () => { isDragging = true; document.body.style.userSelect = 'none'; });
+document.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  const w = e.clientX;
+  if (w < 250 || w > window.innerWidth - 250) return;
+  leftPanel.style.width = w + 'px';
+});
+document.addEventListener('mouseup', () => { isDragging = false; document.body.style.userSelect = 'auto'; });
+</script>
+</body>
+</html>

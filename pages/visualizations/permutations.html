@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Permutations - Backtracking</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet"/>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Orbitron',sans-serif; background:#000; color:white; display:flex; height:100vh; overflow:hidden; }
+  .left-panel { width:33%; min-width:250px; background:#111; border-right:2px solid #0ff3; padding:2rem; overflow-y:auto; }
+  .left-panel h2 { color:#0ff; margin-bottom:1rem; font-size:1.7rem; }
+  .tree-container { background:#1a1a1a; border:2px solid #0ff3; border-radius:10px; height:250px; margin-bottom:1rem; overflow-y:auto; padding:12px; }
+  .row-label { font-size:0.65rem; color:#0ff8; margin-bottom:6px; }
+  .slots-row, .avail-row { display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap; }
+  .slot { width:36px; height:36px; border:2px solid #0ff3; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:0.8rem; color:#0ff5; background:#0ff05; transition:all 0.3s ease; }
+  .slot.filled { border-color:#0f0; color:#0f0; background:#00ff001a; }
+  .avail-chip { border:2px solid #0ff; border-radius:6px; padding:0.4rem 0.6rem; font-size:0.75rem; color:#0ff; background:#0ff1; transition:all 0.3s ease; }
+  .avail-chip.used { opacity:0.2; }
+  .avail-chip.trying { border-color:gold; color:gold; background:#ffd7001a; }
+  .results-list { display:flex; gap:4px; flex-wrap:wrap; }
+  .result-chip { border:1px solid #0f0; color:#0f0; border-radius:6px; padding:2px 6px; font-size:0.65rem; }
+  .controls { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:1rem; }
+  .btn { background:#0ff3; padding:0.6rem 1rem; border:none; border-radius:8px; cursor:pointer; color:black; font-family:'Orbitron',sans-serif; font-size:0.8rem; transition:background 0.3s; }
+  .btn:hover { background:#0ff; }
+  .btn:disabled { opacity:0.3; cursor:not-allowed; }
+  .speed-row { display:flex; align-items:center; gap:8px; margin-bottom:1.2rem; font-size:0.75rem; color:#0ff; }
+  input[type=range] { flex:1; accent-color:#0ff; }
+  #status { font-size:0.72rem; color:#0ff; min-height:1.4rem; margin-bottom:1rem; text-align:center; }
+  .code-block h3 { color:#0ff; margin-bottom:0.5rem; font-size:1.2rem; }
+  pre { background:#000; padding:1rem; border-radius:8px; border:1px solid #0ff3; color:#0ff; overflow-x:auto; font-size:0.8rem; line-height:1.4rem; }
+  #divider { width:6px; background:#0ff3; cursor:col-resize; flex-shrink:0; }
+  #divider:hover { background:#0ff; }
+  .right-panel { flex:1; min-width:250px; padding:2rem; overflow-y:auto; }
+  .right-panel h1 { color:#0ff; font-size:2rem; margin-bottom:1rem; }
+  .right-panel p { font-size:1rem; color:#ccc; line-height:1.7; margin-bottom:1.2rem; }
+  .right-panel h2 { color:#0ff; font-size:1.3rem; margin:1.5rem 0 0.5rem; }
+  .right-panel ul { margin-left:1.2rem; color:#ccc; line-height:1.8; }
+  .highlight { color:#0ff; font-weight:bold; }
+  .legend { display:flex; gap:1.5rem; flex-wrap:wrap; margin-bottom:1.5rem; font-size:0.75rem; color:#ccc; }
+  .legend-item { display:flex; align-items:center; gap:6px; }
+  .legend-dot { width:14px; height:14px; border-radius:4px; border:2px solid; }
+</style>
+</head>
+<body>
+
+<div class="left-panel">
+  <h2>Permutations (Backtracking)</h2>
+
+  <div class="tree-container" id="treeContainer">
+    <div class="row-label">Current permutation being built</div>
+    <div class="slots-row" id="slotsRow"></div>
+    <div class="row-label">Available elements</div>
+    <div class="avail-row" id="availRow"></div>
+    <div class="row-label">Permutations found</div>
+    <div class="results-list" id="resultsList"></div>
+  </div>
+
+  <div id="status">Press "New Elements" to start</div>
+
+  <div class="controls">
+    <button class="btn" id="newBtn"   onclick="generateElements()">New Elements</button>
+    <button class="btn" id="sortBtn"  onclick="startRun()" disabled>Run ▶</button>
+    <button class="btn" id="stepBtn"  onclick="doStep()"    disabled>Step</button>
+    <button class="btn" id="resetBtn" onclick="resetRun()"  disabled>Reset</button>
+  </div>
+
+  <div class="speed-row">
+    <span>Slow</span>
+    <input type="range" id="speedSlider" min="50" max="800" value="200" step="25"/>
+    <span>Fast</span>
+  </div>
+
+  <div class="code-block">
+    <h3>Backtracking Code</h3>
+    <pre><code>function permute(arr) {
+  const results = [];
+  const current = [];
+  const used = new Array(arr.length).fill(false);
+
+  function backtrack() {
+    if (current.length === arr.length) {
+      results.push([...current]);
+      return;
+    }
+
+    for (let i = 0; i < arr.length; i++) {
+      if (used[i]) continue;         // already placed — skip
+
+      used[i] = true;
+      current.push(arr[i]);
+
+      backtrack();                   // recurse with one more element placed
+
+      current.pop();                 // undo — backtrack
+      used[i] = false;
+    }
+  }
+
+  backtrack();
+  return results;
+}</code></pre>
+  </div>
+</div>
+
+<div id="divider"></div>
+
+<div class="right-panel">
+  <h1>How Permutation Backtracking Works</h1>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="border-color:gold"></div>Trying this element next</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#0f0"></div>Placed in the current slot</div>
+  </div>
+
+  <p>
+    Generating all permutations of a set means trying every possible ordering. Backtracking builds one ordering at a time, slot by slot: pick any unused element for the next slot, recurse to fill the rest, then undo that choice and try a different element — systematically covering every arrangement without ever repeating one.
+  </p>
+
+  <h2>Step by step</h2>
+  <ul>
+    <li>Maintain a <span class="highlight">current</span> partial permutation and a <span class="highlight">used</span> flag per element.</li>
+    <li>If the current permutation is already full length, record it as a complete result.</li>
+    <li>Otherwise, try each <span class="highlight">unused</span> element (gold) as the next slot.</li>
+    <li>Mark it used, append it to <code>current</code> (green), and recurse to fill the remaining slots.</li>
+    <li>After the recursive call returns (every completion starting with that choice has been found), <span class="highlight">undo</span>: remove it from <code>current</code> and mark it unused again — freeing it up for a different position in a different branch.</li>
+  </ul>
+
+  <h2>Why "undo" matters here</h2>
+  <p>
+    Without un-marking an element as unused after backtracking, later branches would incorrectly think it's permanently placed and skip using it in other valid orderings — the undo step is exactly what lets the same element appear in every position across different permutations.
+  </p>
+
+  <h2>Complexity</h2>
+  <p>
+    Time: <span class="highlight">O(n · n!)</span> — n! permutations, each taking O(n) to construct/copy.<br/>
+    Space: <span class="highlight">O(n)</span> for the recursion stack and the current partial permutation (not counting the output).
+  </p>
+
+  <h2>When is it used?</h2>
+  <ul>
+    <li>Generating all orderings for brute-force search (e.g. small Traveling Salesman instances).</li>
+    <li>Anagram and password/combination generation.</li>
+    <li>Testing every possible sequence of operations in a fixed set.</li>
+  </ul>
+
+  <h2>Compared to other backtracking shapes</h2>
+  <ul>
+    <li><span class="highlight">Permutations (this):</span> every element must appear exactly once, order matters — the "used" set prevents repeats within one arrangement.</li>
+    <li><span class="highlight">Subsets:</span> each element gets an independent include/exclude decision, and order doesn't matter — no "used" tracking needed, just an index that moves strictly forward.</li>
+    <li><span class="highlight">Combination Sum:</span> elements can repeat, but choices only move forward through a start index to avoid generating the same combination twice.</li>
+  </ul>
+</div>
+
+<script>
+let elements = [];
+let slotEls = [], availEls = [];
+let steps = [], stepIdx = 0, autoTimer = null;
+
+function generateElements() {
+  clearTimer();
+  const letters = ['A','B','C','D'];
+  elements = letters.slice(0, 3 + Math.floor(Math.random()*2)); // 3 or 4 elements
+
+  drawState();
+  document.getElementById('resultsList').innerHTML = '';
+  steps = computeSteps();
+  stepIdx = 0;
+  document.getElementById('sortBtn').disabled = false;
+  document.getElementById('stepBtn').disabled = false;
+  document.getElementById('resetBtn').disabled = false;
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  setStatus(`Elements: {${elements.join(', ')}}. ${steps.length} steps ready.`);
+}
+
+function drawState() {
+  const slots = document.getElementById('slotsRow');
+  const avail = document.getElementById('availRow');
+  slots.innerHTML = ''; avail.innerHTML = '';
+  slotEls = []; availEls = [];
+
+  for (let i = 0; i < elements.length; i++) {
+    const s = document.createElement('div');
+    s.className = 'slot';
+    slots.appendChild(s);
+    slotEls.push(s);
+  }
+  elements.forEach((el, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'avail-chip';
+    chip.textContent = el;
+    avail.appendChild(chip);
+    availEls.push(chip);
+  });
+}
+
+function computeSteps() {
+  const n = elements.length;
+  const used = new Array(n).fill(false);
+  const current = [];
+  const steps = [];
+  let count = 0;
+
+  function backtrack() {
+    if (current.length === n) {
+      count++;
+      steps.push({type:'result', perm: current.slice(), count});
+      return;
+    }
+    for (let i = 0; i < n; i++) {
+      if (used[i]) continue;
+      steps.push({type:'try', i});
+      used[i] = true;
+      current.push(elements[i]);
+      steps.push({type:'place', i, slot: current.length-1});
+
+      backtrack();
+
+      current.pop();
+      used[i] = false;
+      steps.push({type:'undo', i, slot: current.length});
+    }
+  }
+
+  backtrack();
+  steps.push({type:'finish', count});
+  return steps;
+}
+
+function doStep() {
+  if (stepIdx >= steps.length) return;
+  const s = steps[stepIdx++];
+
+  if (s.type === 'try') {
+    availEls[s.i].classList.add('trying');
+    setStatus(`Trying element "${elements[s.i]}"…`);
+  } else if (s.type === 'place') {
+    availEls[s.i].classList.remove('trying');
+    availEls[s.i].classList.add('used');
+    slotEls[s.slot].classList.add('filled');
+    slotEls[s.slot].textContent = elements[s.i];
+    setStatus(`Placed "${elements[s.i]}" in slot ${s.slot}.`);
+  } else if (s.type === 'undo') {
+    availEls[s.i].classList.remove('used');
+    slotEls[s.slot].classList.remove('filled');
+    slotEls[s.slot].textContent = '';
+    setStatus(`Backtracking — undoing "${elements[s.i]}" from slot ${s.slot}.`);
+  } else if (s.type === 'result') {
+    const chip = document.createElement('div');
+    chip.className = 'result-chip';
+    chip.textContent = s.perm.join('');
+    document.getElementById('resultsList').appendChild(chip);
+    setStatus(`✅ Full permutation found: ${s.perm.join('')} (#${s.count})`);
+  } else if (s.type === 'finish') {
+    setStatus(`Done — ${s.count} total permutations.`);
+    clearTimer();
+    document.getElementById('sortBtn').textContent = 'Run ▶';
+  }
+}
+
+function startRun() {
+  if (autoTimer) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+  if (stepIdx >= steps.length) return;
+  document.getElementById('sortBtn').textContent = 'Pause ⏸';
+  const delay = 850 - parseInt(document.getElementById('speedSlider').value);
+  autoTimer = setInterval(() => {
+    if (stepIdx >= steps.length) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+    doStep();
+  }, delay);
+}
+
+function resetRun() {
+  clearTimer();
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  drawState();
+  document.getElementById('resultsList').innerHTML = '';
+  steps = computeSteps();
+  stepIdx = 0;
+  setStatus(`Reset. ${steps.length} steps ready.`);
+}
+
+function setStatus(msg) { document.getElementById('status').textContent = msg; }
+function clearTimer() { clearInterval(autoTimer); autoTimer = null; }
+
+const divider = document.getElementById('divider');
+const leftPanel = document.querySelector('.left-panel');
+let isDragging = false;
+divider.addEventListener('mousedown', () => { isDragging = true; document.body.style.userSelect = 'none'; });
+document.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  const w = e.clientX;
+  if (w < 250 || w > window.innerWidth - 250) return;
+  leftPanel.style.width = w + 'px';
+});
+document.addEventListener('mouseup', () => { isDragging = false; document.body.style.userSelect = 'auto'; });
+</script>
+</body>
+</html>

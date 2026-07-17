@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Counting Sort Visualization</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet"/>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Orbitron', sans-serif; background-color: #000; color: white; display: flex; height: 100vh; overflow: hidden; }
+    .left-panel { width: 33%; min-width:250px; background-color: #111; border-right: 2px solid #0ff3; padding: 2rem; overflow-y: auto; }
+    .left-panel h2 { color: #0ff; margin-bottom: 1rem; font-size: 1.7rem; }
+    .viz-box { background-color: #1a1a1a; border: 2px solid #0ff3; border-radius: 10px; height: 280px; margin-bottom: 1rem; padding: 12px; overflow-y:auto; }
+    .row-label { font-size: 0.62rem; color: #0ff8; margin-bottom: 4px; }
+    .bars-row { display: flex; align-items: flex-end; justify-content: center; gap: 5px; height:90px; margin-bottom:10px; }
+    .bar { width: 26px; border-radius: 4px 4px 0 0; background-color: #0ff; display: flex; align-items: flex-start; justify-content: center; padding-top: 3px; font-size: 0.6rem; color: #000; transition: background-color 0.25s ease; }
+    .count-row { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:10px; }
+    .count-cell { min-width:28px; height:28px; border:2px solid #0ff3; border-radius:4px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:0.6rem; color:#0ff; background:#0ff05; transition:all 0.25s ease; }
+    .count-cell.active { border-color:gold; color:gold; background:#ffd7001a; }
+    .output-row { display:flex; gap:4px; flex-wrap:wrap; }
+    .out-cell { min-width:26px; height:26px; border:2px solid #0ff3; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:0.65rem; color:#0ff5; background:#0ff05; transition:all 0.25s ease; }
+    .out-cell.filled { border-color:#0f0; color:#0f0; background:#00ff001a; }
+    .controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; }
+    .btn { background-color: #0ff3; padding: 0.6rem 1rem; border: none; border-radius: 8px; cursor: pointer; color: black; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; transition: background 0.3s; }
+    .btn:hover { background-color: #0ff; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .speed-row { display: flex; align-items: center; gap: 8px; margin-bottom: 1.2rem; font-size: 0.75rem; color: #0ff; }
+    input[type=range] { flex: 1; accent-color: #0ff; }
+    #status { font-size: 0.72rem; color: #0ff; min-height: 1.4rem; margin-bottom: 1rem; text-align: center; }
+    .code-block h3 { color: #0ff; margin-bottom: 0.5rem; font-size: 1.2rem; }
+    pre { background-color: #000; padding: 1rem; border-radius: 8px; border: 1px solid #0ff3; color: #0ff; overflow-x: auto; font-size: 0.8rem; line-height: 1.4rem; }
+    #divider { width: 6px; background: #0ff3; cursor: col-resize; flex-shrink:0; }
+    #divider:hover { background: #0ff; }
+    .right-panel { flex:1; min-width:250px; padding: 2rem; overflow-y: auto; }
+    .right-panel h1 { color: #0ff; font-size: 2rem; margin-bottom: 1rem; }
+    .right-panel p  { font-size: 1rem; color: #ccc; line-height: 1.7; margin-bottom: 1.2rem; }
+    .right-panel h2 { color: #0ff; font-size: 1.3rem; margin: 1.5rem 0 0.5rem; }
+    .right-panel ul { margin-left: 1.2rem; color: #ccc; line-height: 1.8; }
+    .highlight { color: #0ff; font-weight: bold; }
+    .legend { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; font-size: 0.75rem; color: #ccc; }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-dot  { width: 14px; height: 14px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<div class="left-panel">
+  <h2>Counting Sort</h2>
+
+  <div class="viz-box" id="vizBox">
+    <div class="row-label">Input array</div>
+    <div class="bars-row" id="barsRow"></div>
+    <div class="row-label">Count array (occurrences of each value)</div>
+    <div class="count-row" id="countRow"></div>
+    <div class="row-label">Output array (being built)</div>
+    <div class="output-row" id="outputRow"></div>
+  </div>
+
+  <div id="status">Press "New Array" to start</div>
+
+  <div class="controls">
+    <button class="btn" id="newBtn"  onclick="generateArray()">New Array</button>
+    <button class="btn" id="sortBtn" onclick="startSort()" disabled>Sort ▶</button>
+    <button class="btn" id="stepBtn" onclick="doStep()"    disabled>Step</button>
+    <button class="btn" id="resetBtn" onclick="resetSort()" disabled>Reset</button>
+  </div>
+
+  <div class="speed-row">
+    <span>Slow</span>
+    <input type="range" id="speedSlider" min="100" max="1000" value="450" step="50"/>
+    <span>Fast</span>
+  </div>
+
+  <div class="code-block">
+    <h3>Counting Sort Code</h3>
+    <pre><code>function countingSort(arr, maxVal) {
+  const count = new Array(maxVal + 1).fill(0);
+  for (const v of arr) count[v]++;          // tally occurrences
+
+  for (let i = 1; i <= maxVal; i++) {
+    count[i] += count[i - 1];                // prefix sum = final position
+  }
+
+  const output = new Array(arr.length);
+  for (let i = arr.length - 1; i >= 0; i--) { // iterate backward for stability
+    output[count[arr[i]] - 1] = arr[i];
+    count[arr[i]]--;
+  }
+
+  return output;
+}</code></pre>
+  </div>
+</div>
+
+<div id="divider"></div>
+
+<div class="right-panel">
+  <h1>How Counting Sort Works</h1>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#0ff"></div>Input element being counted</div>
+    <div class="legend-item"><div class="legend-dot" style="background:gold"></div>Count cell being updated</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#0f0"></div>Placed in output</div>
+  </div>
+
+  <p>
+    Counting sort doesn't compare elements at all — it counts how many times each value appears, then uses those counts to figure out exactly where each element belongs. That only works when values fall in a small, known range, but when they do, it's faster than any comparison sort could ever be.
+  </p>
+
+  <h2>Step by step</h2>
+  <ul>
+    <li><strong>Count:</strong> scan the input once, incrementing <code>count[value]</code> for every element (gold cell lights up).</li>
+    <li><strong>Prefix sum:</strong> transform the count array so <code>count[v]</code> now means "how many elements are ≤ v" — this directly gives the final index range for each value.</li>
+    <li><strong>Place:</strong> walk the input from the end backward (this preserves stability), and for each element, place it at position <code>count[value] - 1</code> in the output, then decrement that count.</li>
+    <li>Once every element has been placed, the output array is fully sorted.</li>
+  </ul>
+
+  <h2>Why walk backward when placing?</h2>
+  <p>
+    Placing elements in reverse input order means that if two elements have equal value, the one that appeared earlier in the input still ends up earlier in the output — preserving their original relative order, which is what makes counting sort <span class="highlight">stable</span>.
+  </p>
+
+  <h2>Complexity</h2>
+  <p>
+    Time: <span class="highlight">O(n + k)</span> — n elements to count/place, k = range of possible values.<br/>
+    Space: <span class="highlight">O(n + k)</span> for the count array and output array.<br/>
+    Stable: <span class="highlight">Yes</span>, when implemented with the backward placement pass shown here.
+  </p>
+
+  <h2>When is it used?</h2>
+  <p>
+    Excellent when the value range k is small relative to n (e.g. sorting exam scores 0-100, or single-digit values). It's also the core subroutine used inside radix sort to sort by each individual digit.
+  </p>
+
+  <h2>Compared to other sorts</h2>
+  <ul>
+    <li><span class="highlight">Counting Sort:</span> O(n + k) — beats comparison sorts' O(n log n) floor, but only works well when k is small.</li>
+    <li><span class="highlight">Radix Sort:</span> applies counting sort digit-by-digit, extending this idea to numbers with a large range but a bounded number of digits.</li>
+    <li><span class="highlight">Merge/Quick Sort:</span> O(n log n) — comparison-based, so they work on any orderable data type, not just small-range integers.</li>
+  </ul>
+</div>
+
+<script>
+  let array = [], maxVal = 0, steps = [], stepIdx = 0, autoTimer = null;
+
+  function generateArray() {
+    clearInterval(autoTimer); autoTimer = null;
+    array = [];
+    for (let i = 0; i < 10; i++) array.push(Math.floor(Math.random()*16));
+    maxVal = Math.max(...array);
+
+    steps = computeSteps([...array]);
+    stepIdx = 0;
+    drawAll(array, new Array(maxVal+1).fill(0), new Array(array.length).fill(null), -1, -1);
+
+    document.getElementById('sortBtn').disabled = false;
+    document.getElementById('stepBtn').disabled = false;
+    document.getElementById('resetBtn').disabled = false;
+    document.getElementById('sortBtn').textContent = 'Sort ▶';
+    document.getElementById('status').textContent = `Array ready (values 0-${maxVal}). ${steps.length} steps total.`;
+  }
+
+  function computeSteps(arr) {
+    const steps = [];
+    const n = arr.length;
+    const count = new Array(maxVal+1).fill(0);
+
+    for (let i = 0; i < n; i++) {
+      count[arr[i]]++;
+      steps.push({type:'count', inputIdx:i, countArr:[...count]});
+    }
+    for (let v = 1; v <= maxVal; v++) {
+      count[v] += count[v-1];
+      steps.push({type:'prefix', v, countArr:[...count]});
+    }
+
+    const output = new Array(n).fill(null);
+    for (let i = n-1; i >= 0; i--) {
+      const pos = count[arr[i]] - 1;
+      output[pos] = arr[i];
+      count[arr[i]]--;
+      steps.push({type:'place', inputIdx:i, outIdx:pos, output:[...output], countArr:[...count]});
+    }
+    steps.push({type:'done', output:[...output]});
+    return steps;
+  }
+
+  function drawAll(input, countArr, output, activeInput, activeCount) {
+    const barsRow = document.getElementById('barsRow');
+    barsRow.innerHTML = '';
+    const maxV = Math.max(...input, 1);
+    input.forEach((v, i) => {
+      const bar = document.createElement('div');
+      bar.className = 'bar';
+      bar.style.height = Math.round((v/maxV)*80 + 12) + 'px';
+      bar.style.backgroundColor = i === activeInput ? 'gold' : '#0ff';
+      bar.textContent = v;
+      barsRow.appendChild(bar);
+    });
+
+    const countRow = document.getElementById('countRow');
+    countRow.innerHTML = '';
+    countArr.forEach((c, v) => {
+      const cell = document.createElement('div');
+      cell.className = 'count-cell' + (v === activeCount ? ' active' : '');
+      cell.innerHTML = `${c}<span style="font-size:0.5rem;color:#0ff8;">v${v}</span>`;
+      countRow.appendChild(cell);
+    });
+
+    const outRow = document.getElementById('outputRow');
+    outRow.innerHTML = '';
+    output.forEach(v => {
+      const cell = document.createElement('div');
+      cell.className = 'out-cell' + (v !== null ? ' filled' : '');
+      cell.textContent = v !== null ? v : '';
+      outRow.appendChild(cell);
+    });
+  }
+
+  function doStep() {
+    if (stepIdx >= steps.length) return;
+    const step = steps[stepIdx++];
+    const st = document.getElementById('status');
+
+    if (step.type === 'count') {
+      drawAll(array, step.countArr, new Array(array.length).fill(null), step.inputIdx, array[step.inputIdx]);
+      st.textContent = `Counted value ${array[step.inputIdx]} at input index ${step.inputIdx}.`;
+    } else if (step.type === 'prefix') {
+      drawAll(array, step.countArr, new Array(array.length).fill(null), -1, step.v);
+      st.textContent = `Prefix sum: count[${step.v}] now = ${step.countArr[step.v]}.`;
+    } else if (step.type === 'place') {
+      drawAll(array, step.countArr, step.output, step.inputIdx, array[step.inputIdx]);
+      st.textContent = `Placed value ${array[step.inputIdx]} at output index ${step.outIdx}.`;
+    } else if (step.type === 'done') {
+      drawAll(array, new Array(maxVal+1).fill(0), step.output, -1, -1);
+      st.textContent = '✅ Sorted!';
+      clearInterval(autoTimer); autoTimer = null;
+      document.getElementById('sortBtn').textContent = 'Sort ▶';
+    }
+  }
+
+  function startSort() {
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; document.getElementById('sortBtn').textContent = 'Sort ▶'; return; }
+    if (stepIdx >= steps.length) return;
+    document.getElementById('sortBtn').textContent = 'Pause ⏸';
+    const delay = 1100 - parseInt(document.getElementById('speedSlider').value);
+    autoTimer = setInterval(() => {
+      if (stepIdx >= steps.length) { clearInterval(autoTimer); autoTimer = null; document.getElementById('sortBtn').textContent = 'Sort ▶'; return; }
+      doStep();
+    }, delay);
+  }
+
+  function resetSort() {
+    clearInterval(autoTimer); autoTimer = null;
+    stepIdx = 0;
+    drawAll(array, new Array(maxVal+1).fill(0), new Array(array.length).fill(null), -1, -1);
+    document.getElementById('status').textContent = `Reset. ${steps.length} steps total.`;
+    document.getElementById('sortBtn').textContent = 'Sort ▶';
+  }
+
+  const divider = document.getElementById("divider");
+  const leftPanel = document.querySelector(".left-panel");
+  let isDragging = false;
+  divider.addEventListener("mousedown", () => { isDragging = true; document.body.style.userSelect = "none"; });
+  document.addEventListener("mousemove", (e) => {
+    if (!isDragging) return;
+    let newWidth = e.clientX;
+    if (newWidth < 250 || newWidth > window.innerWidth - 250) return;
+    leftPanel.style.width = newWidth + "px";
+  });
+  document.addEventListener("mouseup", () => { isDragging = false; document.body.style.userSelect = "auto"; });
+</script>
+</body>
+</html>

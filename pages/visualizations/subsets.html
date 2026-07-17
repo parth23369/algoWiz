@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Subsets (Power Set) - Backtracking</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet"/>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Orbitron',sans-serif; background:#000; color:white; display:flex; height:100vh; overflow:hidden; }
+  .left-panel { width:33%; min-width:250px; background:#111; border-right:2px solid #0ff3; padding:2rem; overflow-y:auto; }
+  .left-panel h2 { color:#0ff; margin-bottom:1rem; font-size:1.6rem; }
+  .tree-container { background:#1a1a1a; border:2px solid #0ff3; border-radius:10px; height:260px; margin-bottom:1rem; overflow-y:auto; padding:12px; }
+  .row-label { font-size:0.65rem; color:#0ff8; margin-bottom:6px; }
+  .elements-row { display:flex; gap:6px; margin-bottom:12px; }
+  .el-chip { border:2px solid #0ff; border-radius:6px; padding:0.4rem 0.6rem; font-size:0.75rem; color:#0ff; background:#0ff1; transition:all 0.3s ease; }
+  .el-chip.considering { border-color:gold; color:gold; background:#ffd7001a; }
+  .el-chip.included { border-color:#0f0; color:#0f0; background:#00ff001a; }
+  .el-chip.excluded { opacity:0.3; }
+  .current-box { border:2px solid #0ff3; border-radius:8px; padding:0.5rem; font-size:0.75rem; color:#0ff; margin-bottom:12px; min-height:1.4rem; }
+  .results-list { display:flex; gap:4px; flex-wrap:wrap; }
+  .result-chip { border:1px solid #0f0; color:#0f0; border-radius:6px; padding:2px 6px; font-size:0.62rem; }
+  .controls { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:1rem; }
+  .btn { background:#0ff3; padding:0.6rem 1rem; border:none; border-radius:8px; cursor:pointer; color:black; font-family:'Orbitron',sans-serif; font-size:0.8rem; transition:background 0.3s; }
+  .btn:hover { background:#0ff; }
+  .btn:disabled { opacity:0.3; cursor:not-allowed; }
+  .speed-row { display:flex; align-items:center; gap:8px; margin-bottom:1.2rem; font-size:0.75rem; color:#0ff; }
+  input[type=range] { flex:1; accent-color:#0ff; }
+  #status { font-size:0.72rem; color:#0ff; min-height:1.4rem; margin-bottom:1rem; text-align:center; }
+  .code-block h3 { color:#0ff; margin-bottom:0.5rem; font-size:1.2rem; }
+  pre { background:#000; padding:1rem; border-radius:8px; border:1px solid #0ff3; color:#0ff; overflow-x:auto; font-size:0.8rem; line-height:1.4rem; }
+  #divider { width:6px; background:#0ff3; cursor:col-resize; flex-shrink:0; }
+  #divider:hover { background:#0ff; }
+  .right-panel { flex:1; min-width:250px; padding:2rem; overflow-y:auto; }
+  .right-panel h1 { color:#0ff; font-size:2rem; margin-bottom:1rem; }
+  .right-panel p { font-size:1rem; color:#ccc; line-height:1.7; margin-bottom:1.2rem; }
+  .right-panel h2 { color:#0ff; font-size:1.3rem; margin:1.5rem 0 0.5rem; }
+  .right-panel ul { margin-left:1.2rem; color:#ccc; line-height:1.8; }
+  .highlight { color:#0ff; font-weight:bold; }
+  .legend { display:flex; gap:1.5rem; flex-wrap:wrap; margin-bottom:1.5rem; font-size:0.75rem; color:#ccc; }
+  .legend-item { display:flex; align-items:center; gap:6px; }
+  .legend-dot { width:14px; height:14px; border-radius:4px; border:2px solid; }
+</style>
+</head>
+<body>
+
+<div class="left-panel">
+  <h2>Subsets / Power Set (Backtracking)</h2>
+
+  <div class="tree-container" id="treeContainer">
+    <div class="row-label">Elements</div>
+    <div class="elements-row" id="elementsRow"></div>
+    <div class="row-label">Current subset being built</div>
+    <div class="current-box" id="currentBox"></div>
+    <div class="row-label">Subsets found</div>
+    <div class="results-list" id="resultsList"></div>
+  </div>
+
+  <div id="status">Press "New Elements" to start</div>
+
+  <div class="controls">
+    <button class="btn" id="newBtn"   onclick="generateElements()">New Elements</button>
+    <button class="btn" id="sortBtn"  onclick="startRun()" disabled>Run ▶</button>
+    <button class="btn" id="stepBtn"  onclick="doStep()"    disabled>Step</button>
+    <button class="btn" id="resetBtn" onclick="resetRun()"  disabled>Reset</button>
+  </div>
+
+  <div class="speed-row">
+    <span>Slow</span>
+    <input type="range" id="speedSlider" min="50" max="800" value="200" step="25"/>
+    <span>Fast</span>
+  </div>
+
+  <div class="code-block">
+    <h3>Backtracking Code</h3>
+    <pre><code>function subsets(arr) {
+  const results = [];
+  const current = [];
+
+  function backtrack(index) {
+    if (index === arr.length) {
+      results.push([...current]);   // every index decided — record it
+      return;
+    }
+
+    // Choice 1: include arr[index]
+    current.push(arr[index]);
+    backtrack(index + 1);
+    current.pop();                  // undo — backtrack
+
+    // Choice 2: exclude arr[index]
+    backtrack(index + 1);
+  }
+
+  backtrack(0);
+  return results;
+}</code></pre>
+  </div>
+</div>
+
+<div id="divider"></div>
+
+<div class="right-panel">
+  <h1>How Subsets Backtracking Works</h1>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="border-color:gold"></div>Deciding this element</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#0f0"></div>Included in current subset</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#0ff; opacity:0.3;"></div>Excluded from current subset</div>
+  </div>
+
+  <p>
+    The power set of a set with n elements has 2ⁿ subsets — every element is either in or out. Backtracking generates all of them by making that include/exclude decision one element at a time, and exploring <span class="highlight">both</span> branches for every decision rather than picking just one.
+  </p>
+
+  <h2>Step by step</h2>
+  <ul>
+    <li>Move through elements by index, left to right (gold = currently deciding).</li>
+    <li>Once every index has been decided (index reaches the end), the current partial subset is complete — record it.</li>
+    <li><span class="highlight">Branch 1 — include:</span> add this element to the current subset (green), recurse to decide the next index, then remove it again (undo) once that branch is fully explored.</li>
+    <li><span class="highlight">Branch 2 — exclude:</span> simply recurse to the next index without adding anything (dimmed).</li>
+    <li>Because both branches are tried for every element, all 2ⁿ combinations get generated exactly once.</li>
+  </ul>
+
+  <h2>Why this naturally produces every subset</h2>
+  <p>
+    Each of the n elements independently doubles the number of possibilities — for element 1, both "in" and "out" are explored; for each of those, element 2 again splits into two, and so on. That's exactly 2ⁿ leaves in the decision tree, one for each possible subset.
+  </p>
+
+  <h2>Complexity</h2>
+  <p>
+    Time: <span class="highlight">O(n · 2ⁿ)</span> — 2ⁿ subsets, each up to O(n) to copy into the results.<br/>
+    Space: <span class="highlight">O(n)</span> for the recursion stack and current subset (excluding the output).
+  </p>
+
+  <h2>When is it used?</h2>
+  <ul>
+    <li>Enumerating all possible feature/option combinations.</li>
+    <li>Brute-force search over subset-based problems (subset sum, partitioning).</li>
+    <li>Building truth tables for boolean expressions.</li>
+  </ul>
+
+  <h2>Compared to other backtracking shapes</h2>
+  <ul>
+    <li><span class="highlight">Subsets (this):</span> one independent include/exclude decision per index — order doesn't matter, no "used" tracking.</li>
+    <li><span class="highlight">Permutations:</span> every element must appear exactly once, but order matters — needs a "used" set instead of an index that only moves forward.</li>
+    <li><span class="highlight">Combination Sum:</span> like subsets, but elements can be reused and the branching is pruned early once the running sum exceeds the target.</li>
+  </ul>
+</div>
+
+<script>
+let elements = [];
+let elChips = [];
+let steps = [], stepIdx = 0, autoTimer = null;
+
+function generateElements() {
+  clearTimer();
+  const letters = ['A','B','C'];
+  elements = letters.slice(0, 3);
+
+  drawState();
+  document.getElementById('resultsList').innerHTML = '';
+  document.getElementById('currentBox').textContent = '{ }';
+  steps = computeSteps();
+  stepIdx = 0;
+  document.getElementById('sortBtn').disabled = false;
+  document.getElementById('stepBtn').disabled = false;
+  document.getElementById('resetBtn').disabled = false;
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  setStatus(`Elements: {${elements.join(', ')}}. ${steps.length} steps ready.`);
+}
+
+function drawState() {
+  const row = document.getElementById('elementsRow');
+  row.innerHTML = '';
+  elChips = [];
+  elements.forEach(el => {
+    const chip = document.createElement('div');
+    chip.className = 'el-chip';
+    chip.textContent = el;
+    row.appendChild(chip);
+    elChips.push(chip);
+  });
+}
+
+function computeSteps() {
+  const n = elements.length;
+  const current = [];
+  const steps = [];
+  let count = 0;
+
+  function backtrack(index) {
+    if (index === n) {
+      count++;
+      steps.push({type:'result', subset: current.slice(), count});
+      return;
+    }
+
+    steps.push({type:'consider', index});
+
+    // include
+    current.push(elements[index]);
+    steps.push({type:'include', index, current: current.slice()});
+    backtrack(index+1);
+    current.pop();
+    steps.push({type:'undoInclude', index, current: current.slice()});
+
+    // exclude
+    steps.push({type:'exclude', index, current: current.slice()});
+    backtrack(index+1);
+    steps.push({type:'undoExclude', index});
+  }
+
+  backtrack(0);
+  steps.push({type:'finish', count});
+  return steps;
+}
+
+function doStep() {
+  if (stepIdx >= steps.length) return;
+  const s = steps[stepIdx++];
+
+  if (s.type === 'consider') {
+    elChips[s.index].classList.add('considering');
+    setStatus(`Deciding: include or exclude "${elements[s.index]}"?`);
+  } else if (s.type === 'include') {
+    elChips[s.index].classList.remove('considering');
+    elChips[s.index].classList.add('included');
+    document.getElementById('currentBox').textContent = `{ ${s.current.join(', ')} }`;
+    setStatus(`Including "${elements[s.index]}".`);
+  } else if (s.type === 'undoInclude') {
+    elChips[s.index].classList.remove('included');
+    document.getElementById('currentBox').textContent = `{ ${s.current.join(', ')} }`;
+    setStatus(`Backtracking — removing "${elements[s.index]}" (trying exclude branch next).`);
+  } else if (s.type === 'exclude') {
+    elChips[s.index].classList.add('excluded');
+    document.getElementById('currentBox').textContent = `{ ${s.current.join(', ')} }`;
+    setStatus(`Excluding "${elements[s.index]}".`);
+  } else if (s.type === 'undoExclude') {
+    elChips[s.index].classList.remove('excluded');
+    setStatus(`Done deciding "${elements[s.index]}" — backtracking up.`);
+  } else if (s.type === 'result') {
+    const chip = document.createElement('div');
+    chip.className = 'result-chip';
+    chip.textContent = `{${s.subset.join(',')}}`;
+    document.getElementById('resultsList').appendChild(chip);
+    setStatus(`✅ Subset recorded: {${s.subset.join(',')}} (#${s.count})`);
+  } else if (s.type === 'finish') {
+    setStatus(`Done — ${s.count} total subsets (2^${elements.length}).`);
+    clearTimer();
+    document.getElementById('sortBtn').textContent = 'Run ▶';
+  }
+}
+
+function startRun() {
+  if (autoTimer) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+  if (stepIdx >= steps.length) return;
+  document.getElementById('sortBtn').textContent = 'Pause ⏸';
+  const delay = 850 - parseInt(document.getElementById('speedSlider').value);
+  autoTimer = setInterval(() => {
+    if (stepIdx >= steps.length) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+    doStep();
+  }, delay);
+}
+
+function resetRun() {
+  clearTimer();
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  drawState();
+  document.getElementById('resultsList').innerHTML = '';
+  document.getElementById('currentBox').textContent = '{ }';
+  steps = computeSteps();
+  stepIdx = 0;
+  setStatus(`Reset. ${steps.length} steps ready.`);
+}
+
+function setStatus(msg) { document.getElementById('status').textContent = msg; }
+function clearTimer() { clearInterval(autoTimer); autoTimer = null; }
+
+const divider = document.getElementById('divider');
+const leftPanel = document.querySelector('.left-panel');
+let isDragging = false;
+divider.addEventListener('mousedown', () => { isDragging = true; document.body.style.userSelect = 'none'; });
+document.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  const w = e.clientX;
+  if (w < 250 || w > window.innerWidth - 250) return;
+  leftPanel.style.width = w + 'px';
+});
+document.addEventListener('mouseup', () => { isDragging = false; document.body.style.userSelect = 'auto'; });
+</script>
+</body>
+</html>

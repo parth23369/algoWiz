@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Rat in a Maze - Backtracking</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet"/>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Orbitron',sans-serif; background:#000; color:white; display:flex; height:100vh; overflow:hidden; }
+  .left-panel { width:33%; min-width:250px; background:#111; border-right:2px solid #0ff3; padding:2rem; overflow-y:auto; }
+  .left-panel h2 { color:#0ff; margin-bottom:1rem; font-size:1.6rem; }
+  .tree-container { background:#1a1a1a; border:2px solid #0ff3; border-radius:10px; height:270px; margin-bottom:1rem; overflow:auto; padding:12px; display:flex; align-items:center; justify-content:center; }
+  #maze { display:inline-grid; gap:3px; }
+  .cell { width:36px; height:36px; display:flex; align-items:center; justify-content:center; font-size:0.9rem; border-radius:4px; transition:all 0.3s ease; }
+  .cell.open   { background:#0ff1; border:2px solid #0ff3; color:#0ff5; }
+  .cell.wall   { background:#333; border:2px solid #444; }
+  .cell.visiting { border-color:gold; background:#ffd7001a; }
+  .cell.path   { border-color:#0f0; background:#00ff001a; }
+  .cell.dead   { border-color:#e24b4a; background:#e24b4a1a; }
+  .controls { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:1rem; }
+  .btn { background:#0ff3; padding:0.6rem 1rem; border:none; border-radius:8px; cursor:pointer; color:black; font-family:'Orbitron',sans-serif; font-size:0.8rem; transition:background 0.3s; }
+  .btn:hover { background:#0ff; }
+  .btn:disabled { opacity:0.3; cursor:not-allowed; }
+  .speed-row { display:flex; align-items:center; gap:8px; margin-bottom:1.2rem; font-size:0.75rem; color:#0ff; }
+  input[type=range] { flex:1; accent-color:#0ff; }
+  #status { font-size:0.72rem; color:#0ff; min-height:1.4rem; margin-bottom:1rem; text-align:center; }
+  .code-block h3 { color:#0ff; margin-bottom:0.5rem; font-size:1.2rem; }
+  pre { background:#000; padding:1rem; border-radius:8px; border:1px solid #0ff3; color:#0ff; overflow-x:auto; font-size:0.8rem; line-height:1.4rem; }
+  #divider { width:6px; background:#0ff3; cursor:col-resize; flex-shrink:0; }
+  #divider:hover { background:#0ff; }
+  .right-panel { flex:1; min-width:250px; padding:2rem; overflow-y:auto; }
+  .right-panel h1 { color:#0ff; font-size:2rem; margin-bottom:1rem; }
+  .right-panel p { font-size:1rem; color:#ccc; line-height:1.7; margin-bottom:1.2rem; }
+  .right-panel h2 { color:#0ff; font-size:1.3rem; margin:1.5rem 0 0.5rem; }
+  .right-panel ul { margin-left:1.2rem; color:#ccc; line-height:1.8; }
+  .highlight { color:#0ff; font-weight:bold; }
+  .legend { display:flex; gap:1.5rem; flex-wrap:wrap; margin-bottom:1.5rem; font-size:0.75rem; color:#ccc; }
+  .legend-item { display:flex; align-items:center; gap:6px; }
+  .legend-dot { width:14px; height:14px; border-radius:4px; border:2px solid; }
+</style>
+</head>
+<body>
+
+<div class="left-panel">
+  <h2>Rat in a Maze (Backtracking)</h2>
+
+  <div class="tree-container" id="treeContainer">
+    <div id="maze"></div>
+  </div>
+
+  <div id="status">Press "New Maze" to start</div>
+
+  <div class="controls">
+    <button class="btn" id="newBtn"   onclick="generateMaze()">New Maze</button>
+    <button class="btn" id="sortBtn"  onclick="startRun()" disabled>Run ▶</button>
+    <button class="btn" id="stepBtn"  onclick="doStep()"    disabled>Step</button>
+    <button class="btn" id="resetBtn" onclick="resetRun()"  disabled>Reset</button>
+  </div>
+
+  <div class="speed-row">
+    <span>Slow</span>
+    <input type="range" id="speedSlider" min="50" max="800" value="250" step="25"/>
+    <span>Fast</span>
+  </div>
+
+  <div class="code-block">
+    <h3>Backtracking Code</h3>
+    <pre><code>function solveMaze(grid, n) {
+  const path = [];
+  const visited = Array.from({length:n}, () => new Array(n).fill(false));
+  const moves = [[1,0],[0,1],[-1,0],[0,-1]]; // down, right, up, left
+
+  function backtrack(r, c) {
+    if (r < 0 || c < 0 || r >= n || c >= n) return false;
+    if (grid[r][c] === 0 || visited[r][c]) return false;   // wall or seen
+
+    visited[r][c] = true;
+    path.push([r, c]);
+
+    if (r === n-1 && c === n-1) return true;   // reached destination
+
+    for (const [dr, dc] of moves) {
+      if (backtrack(r + dr, c + dc)) return true;
+    }
+
+    path.pop();          // undo — this cell leads to a dead end
+    visited[r][c] = false;
+    return false;
+  }
+
+  return backtrack(0, 0) ? path : null;
+}</code></pre>
+  </div>
+</div>
+
+<div id="divider"></div>
+
+<div class="right-panel">
+  <h1>How Rat in a Maze Works</h1>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="border-color:gold"></div>Currently exploring</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#0f0"></div>On the current path</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#e24b4a"></div>Dead end — backtracked</div>
+  </div>
+
+  <p>
+    A rat starts at the top-left of a maze and needs to reach the bottom-right, moving only through open cells. Backtracking explores move by move, extending a path as far as it can — and the instant it hits a dead end, it retraces its steps and tries a different direction from the last cell that still had options.
+  </p>
+
+  <h2>Step by step</h2>
+  <ul>
+    <li>From the current cell, mark it visited and add it to the path (gold while being tried).</li>
+    <li>If this is the destination, success — the path is complete.</li>
+    <li>Otherwise, try each direction in order (down, right, up, left): recurse into any open, unvisited neighbor.</li>
+    <li>If a recursive call succeeds, the answer propagates back up immediately — no further options need to be tried.</li>
+    <li>If <span class="highlight">none</span> of the neighbors lead anywhere, this cell is a dead end (red) — remove it from the path, unmark it as visited, and backtrack to whichever cell called it.</li>
+  </ul>
+
+  <h2>Why unmark on backtrack?</h2>
+  <p>
+    Un-visiting a dead-end cell (rather than leaving it permanently marked) matters when a cell could be legitimately reached again via a completely different path later — although for maze-with-single-path problems, once a full search from a cell fails, it truly can never help, so some implementations skip the un-mark as an optimization.
+  </p>
+
+  <h2>Complexity</h2>
+  <p>
+    Time: <span class="highlight">O(4^(n²))</span> in the absolute worst case (branching in up to 4 directions per cell), though visited-tracking prunes this drastically in practice — real mazes resolve far faster.<br/>
+    Space: <span class="highlight">O(n²)</span> for the visited grid and recursion stack.
+  </p>
+
+  <h2>When is it used?</h2>
+  <ul>
+    <li>Pathfinding in grid-based puzzles and games.</li>
+    <li>Robot motion planning in constrained environments.</li>
+    <li>Foundational example for more advanced pathfinding (BFS/A* are typically faster when only the shortest path matters).</li>
+  </ul>
+
+  <h2>Compared to other pathfinding approaches</h2>
+  <ul>
+    <li><span class="highlight">Backtracking (this):</span> finds <em>a</em> valid path, not necessarily the shortest one; simple to reason about and implement.</li>
+    <li><span class="highlight">BFS:</span> guarantees the shortest path in an unweighted grid, exploring level by level instead of diving down one path at a time.</li>
+    <li><span class="highlight">A*:</span> like BFS/Dijkstra but guided by a heuristic — usually much faster when a good distance estimate to the goal is available.</li>
+  </ul>
+</div>
+
+<script>
+let n = 6;
+let grid = [];
+let cellEls = [];
+let steps = [], stepIdx = 0, autoTimer = null;
+
+function generateMaze() {
+  clearTimer();
+  grid = Array.from({length:n}, () => new Array(n).fill(0));
+
+  // Carve a guaranteed path from (0,0) to (n-1,n-1)
+  let r = 0, c = 0;
+  grid[r][c] = 1;
+  while (r < n-1 || c < n-1) {
+    if (r < n-1 && (c === n-1 || Math.random() < 0.5)) r++;
+    else c++;
+    grid[r][c] = 1;
+  }
+
+  // Sprinkle in extra open cells for some branching/dead ends
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      if (grid[i][j] === 0 && Math.random() < 0.4) grid[i][j] = 1;
+    }
+  }
+
+  drawMaze();
+  steps = computeSteps();
+  stepIdx = 0;
+  document.getElementById('sortBtn').disabled = false;
+  document.getElementById('stepBtn').disabled = false;
+  document.getElementById('resetBtn').disabled = false;
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  setStatus(`${n}x${n} maze generated. ${steps.length} steps ready.`);
+}
+
+function drawMaze() {
+  const maze = document.getElementById('maze');
+  maze.innerHTML = '';
+  maze.style.gridTemplateColumns = `repeat(${n}, 36px)`;
+  cellEls = [];
+  for (let r = 0; r < n; r++) {
+    cellEls[r] = [];
+    for (let c = 0; c < n; c++) {
+      const cell = document.createElement('div');
+      cell.className = grid[r][c] === 1 ? 'cell open' : 'cell wall';
+      if (r===0 && c===0) cell.textContent = 'S';
+      if (r===n-1 && c===n-1) cell.textContent = 'E';
+      maze.appendChild(cell);
+      cellEls[r][c] = cell;
+    }
+  }
+}
+
+function computeSteps() {
+  const visited = Array.from({length:n}, () => new Array(n).fill(false));
+  const moves = [[1,0,'down'],[0,1,'right'],[-1,0,'up'],[0,-1,'left']];
+  const steps = [];
+  let found = false;
+
+  function backtrack(r, c) {
+    if (found) return false;
+    if (r<0||c<0||r>=n||c>=n) return false;
+    if (grid[r][c]===0 || visited[r][c]) return false;
+
+    visited[r][c] = true;
+    steps.push({type:'enter', r, c});
+
+    if (r===n-1 && c===n-1) {
+      found = true;
+      steps.push({type:'reached', r, c});
+      return true;
+    }
+
+    for (const [dr,dc,dir] of moves) {
+      if (backtrack(r+dr, c+dc)) return true;
+    }
+
+    steps.push({type:'dead', r, c});
+    return false;
+  }
+
+  backtrack(0,0);
+  steps.push({type:'finish', found});
+  return steps;
+}
+
+function doStep() {
+  if (stepIdx >= steps.length) return;
+  const s = steps[stepIdx++];
+
+  if (s.type === 'enter') {
+    cellEls[s.r][s.c].classList.add('path');
+    setStatus(`Moving into (${s.r}, ${s.c})…`);
+  } else if (s.type === 'reached') {
+    setStatus(`✅ Reached the destination!`);
+  } else if (s.type === 'dead') {
+    cellEls[s.r][s.c].classList.remove('path');
+    cellEls[s.r][s.c].classList.add('dead');
+    setStatus(`Dead end at (${s.r}, ${s.c}) — backtracking.`);
+  } else if (s.type === 'finish') {
+    setStatus(s.found ? `Path found from start to end!` : `❌ No path exists in this maze.`);
+    clearTimer();
+    document.getElementById('sortBtn').textContent = 'Run ▶';
+  }
+}
+
+function startRun() {
+  if (autoTimer) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+  if (stepIdx >= steps.length) return;
+  document.getElementById('sortBtn').textContent = 'Pause ⏸';
+  const delay = 850 - parseInt(document.getElementById('speedSlider').value);
+  autoTimer = setInterval(() => {
+    if (stepIdx >= steps.length) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+    doStep();
+  }, delay);
+}
+
+function resetRun() {
+  clearTimer();
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  drawMaze();
+  steps = computeSteps();
+  stepIdx = 0;
+  setStatus(`Reset. ${steps.length} steps ready.`);
+}
+
+function setStatus(msg) { document.getElementById('status').textContent = msg; }
+function clearTimer() { clearInterval(autoTimer); autoTimer = null; }
+
+const divider = document.getElementById('divider');
+const leftPanel = document.querySelector('.left-panel');
+let isDragging = false;
+divider.addEventListener('mousedown', () => { isDragging = true; document.body.style.userSelect = 'none'; });
+document.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  const w = e.clientX;
+  if (w < 250 || w > window.innerWidth - 250) return;
+  leftPanel.style.width = w + 'px';
+});
+document.addEventListener('mouseup', () => { isDragging = false; document.body.style.userSelect = 'auto'; });
+</script>
+</body>
+</html>
