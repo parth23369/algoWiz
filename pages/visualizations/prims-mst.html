@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Prim's Algorithm Visualization</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet"/>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Orbitron',sans-serif; background:#000; color:white; display:flex; height:100vh; overflow:hidden; }
+  .left-panel { width:33%; min-width:250px; background:#111; border-right:2px solid #0ff3; padding:2rem; overflow-y:auto; }
+  .left-panel h2 { color:#0ff; margin-bottom:1.5rem; font-size:1.8rem; }
+  .tree-container { background:#1a1a1a; border:2px solid #0ff3; border-radius:10px; height:280px; margin-bottom:1rem; position:relative; overflow:hidden; }
+  #graphSVG { width:100%; height:100%; display:block; }
+  .node-circle { fill:#0ff1; stroke:#0ff; stroke-width:2; transition:stroke 0.3s ease, fill 0.3s ease; }
+  
+  .node-circle.inmst { stroke:#0f0; fill:#00ff001a; }
+  .node-label { font-family:'Orbitron',sans-serif; font-size:11px; text-anchor:middle; dominant-baseline:central; pointer-events:none; fill:#0ff; }
+  .node-label.inmst { fill:#0f0; }
+  .edge { stroke:#0ff3; stroke-width:1.5; transition:stroke 0.3s ease, stroke-width 0.3s ease; }
+  .edge.candidate { stroke:gold; stroke-width:2; }
+  .edge.tree { stroke:#0f0; stroke-width:2.5; }
+  .edge-weight { font-family:'Orbitron',sans-serif; font-size:9px; fill:#0ff8; text-anchor:middle; }
+  #mstTotal { font-size:0.75rem; color:#0f0; text-align:center; margin-bottom:0.5rem; }
+  .controls { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:1rem; }
+  .btn { background:#0ff3; padding:0.6rem 1rem; border:none; border-radius:8px; cursor:pointer; color:black; font-family:'Orbitron',sans-serif; font-size:0.8rem; transition:background 0.3s; }
+  .btn:hover { background:#0ff; }
+  .btn:disabled { opacity:0.3; cursor:not-allowed; }
+  .speed-row { display:flex; align-items:center; gap:8px; margin-bottom:1.2rem; font-size:0.75rem; color:#0ff; }
+  input[type=range] { flex:1; accent-color:#0ff; }
+  #status { font-size:0.75rem; color:#0ff; min-height:1.2rem; margin-bottom:1rem; text-align:center; }
+  .code-block h3 { color:#0ff; margin-bottom:0.5rem; font-size:1.2rem; }
+  pre { background:#000; padding:1rem; border-radius:8px; border:1px solid #0ff3; color:#0ff; overflow-x:auto; font-size:0.8rem; line-height:1.4rem; }
+  #divider { width:6px; background:#0ff3; cursor:col-resize; flex-shrink:0; }
+  #divider:hover { background:#0ff; }
+  .right-panel { flex:1; min-width:250px; padding:2rem; overflow-y:auto; }
+  .right-panel h1 { color:#0ff; font-size:2rem; margin-bottom:1rem; }
+  .right-panel p { font-size:1rem; color:#ccc; line-height:1.7; margin-bottom:1.2rem; }
+  .right-panel h2 { color:#0ff; font-size:1.3rem; margin:1.5rem 0 0.5rem; }
+  .right-panel ul { margin-left:1.2rem; color:#ccc; line-height:1.8; }
+  .highlight { color:#0ff; font-weight:bold; }
+  .legend { display:flex; gap:1.5rem; flex-wrap:wrap; margin-bottom:1.5rem; font-size:0.75rem; color:#ccc; }
+  .legend-item { display:flex; align-items:center; gap:6px; }
+  .legend-dot { width:14px; height:14px; border-radius:50%; border:2px solid; }
+</style>
+</head>
+<body>
+
+<div class="left-panel">
+  <h2>Prim's Algorithm (MST)</h2>
+
+  <div class="tree-container" id="treeContainer">
+    <svg id="graphSVG"></svg>
+  </div>
+
+  <div id="mstTotal"></div>
+  <div id="status">Press "New Graph" to start</div>
+
+  <div class="controls">
+    <button class="btn" id="newBtn"   onclick="generateGraph()">New Graph</button>
+    <button class="btn" id="sortBtn"  onclick="startRun()" disabled>Run ▶</button>
+    <button class="btn" id="stepBtn"  onclick="doStep()"    disabled>Step</button>
+    <button class="btn" id="resetBtn" onclick="resetRun()"  disabled>Reset</button>
+  </div>
+
+  <div class="speed-row">
+    <span>Slow</span>
+    <input type="range" id="speedSlider" min="100" max="1000" value="500" step="50"/>
+    <span>Fast</span>
+  </div>
+
+  <div class="code-block">
+    <h3>Prim's Algorithm Code</h3>
+    <pre><code>function prims(graph, start, n) {
+  const inMST = new Array(n).fill(false);
+  inMST[start] = true;
+  let totalWeight = 0;
+  let edgesUsed = 0;
+
+  while (edgesUsed < n - 1) {
+    // Find the minimum-weight edge connecting MST to non-MST
+    let best = { weight: Infinity, u: -1, v: -1 };
+    for (let u = 0; u < n; u++) {
+      if (!inMST[u]) continue;
+      for (const [v, w] of graph[u]) {
+        if (!inMST[v] && w < best.weight) {
+          best = { weight: w, u, v };
+        }
+      }
+    }
+
+    inMST[best.v] = true;
+    totalWeight += best.weight;
+    edgesUsed++;
+  }
+
+  return totalWeight;
+}</code></pre>
+  </div>
+</div>
+
+<div id="divider"></div>
+
+<div class="right-panel">
+  <h1>How Prim's Algorithm Works</h1>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="border-color:#0ff"></div>Outside the MST</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:gold"></div>Candidate edges being compared</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#0f0"></div>In the MST</div>
+  </div>
+
+  <p>
+    A Minimum Spanning Tree (MST) connects every node in a weighted graph using the smallest possible total edge weight, with no cycles. Prim's algorithm builds it by <span class="highlight">growing a single connected tree</span> one node at a time, always reaching out through the cheapest available edge.
+  </p>
+
+  <h2>Step by step</h2>
+  <ul>
+    <li>Start with one node in the MST set (green); everyone else is outside.</li>
+    <li>Look at every edge that crosses the boundary — one endpoint inside the MST, one outside (gold candidates).</li>
+    <li>Pick the <span class="highlight">minimum-weight</span> such edge, add it to the tree, and pull its outside endpoint into the MST.</li>
+    <li>Repeat until every node has joined — that takes exactly <span class="highlight">n-1</span> edges for n nodes.</li>
+  </ul>
+
+  <h2>Why the cheapest crossing edge?</h2>
+  <p>
+    A classic cut-property argument: for any partition of nodes into "in the tree so far" and "not yet," the minimum-weight edge crossing that partition must belong to some minimum spanning tree — so it's always safe to grab it.
+  </p>
+
+  <h2>Complexity</h2>
+  <p>
+    Time: <span class="highlight">O(V²)</span> with a simple linear scan for the minimum crossing edge each round (as shown), or <span class="highlight">O(E log V)</span> with a binary heap.<br/>
+    Space: <span class="highlight">O(V)</span> for the in-MST set.
+  </p>
+
+  <h2>When is it used?</h2>
+  <ul>
+    <li>Network design — laying minimum cable/pipe to connect all sites.</li>
+    <li>Approximation algorithms for harder problems (like the Traveling Salesman Problem).</li>
+    <li>Cluster analysis and image segmentation.</li>
+  </ul>
+
+  <h2>Compared to Kruskal's Algorithm</h2>
+  <ul>
+    <li><span class="highlight">Prim's (this):</span> grows one connected tree from a starting node — efficient on dense graphs with a heap, O(E log V).</li>
+    <li><span class="highlight">Kruskal's:</span> sorts all edges once and adds them globally (using union-find to avoid cycles) rather than growing from a single node — often simpler to reason about, and efficient on sparse graphs, O(E log E).</li>
+    <li>Both are greedy and both always produce a correct minimum spanning tree — they just explore the edge set in a different order.</li>
+  </ul>
+</div>
+
+<script>
+const NODE_R = 18;
+let nodes = [], edges = [], adj = {};
+let steps = [], stepIdx = 0, autoTimer = null;
+const LABELS = ['A','B','C','D','E','F'];
+
+function generateGraph() {
+  clearTimer();
+  const n = 6;
+  nodes = [];
+  const svg = document.getElementById('graphSVG');
+  const W = svg.clientWidth || 300, H = svg.clientHeight || 280;
+  const cx = W/2, cy = H/2, R = Math.min(W,H)/2 - 35;
+
+  for (let i = 0; i < n; i++) {
+    const angle = (i * 2*Math.PI/n) - Math.PI/2;
+    nodes.push({ id:i, label:LABELS[i], cx: cx + R*Math.cos(angle), cy: cy + R*Math.sin(angle),
+                 circleEl:null, labelEl:null });
+  }
+
+  edges = []; adj = {}; nodes.forEach(nd => adj[nd.id] = []);
+  const order = [...Array(n).keys()].sort(() => Math.random()-0.5);
+  for (let i = 1; i < order.length; i++) {
+    const a = order[i], b = order[Math.floor(Math.random()*i)];
+    addEdge(a, b);
+  }
+  const extra = Math.floor(Math.random()*3) + 1;
+  for (let k = 0; k < extra; k++) {
+    const a = Math.floor(Math.random()*n), b = Math.floor(Math.random()*n);
+    if (a !== b && !adj[a].some(e => e.to===b)) addEdge(a,b);
+  }
+
+  drawGraph();
+  steps = computeSteps(0);
+  stepIdx = 0;
+  document.getElementById('mstTotal').textContent = '';
+  document.getElementById('sortBtn').disabled = false;
+  document.getElementById('stepBtn').disabled = false;
+  document.getElementById('resetBtn').disabled = false;
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  setStatus(`Start = A. ${steps.length} steps ready.`);
+}
+
+function addEdge(a, b) {
+  const w = Math.floor(Math.random()*9)+1;
+  edges.push({a,b,w});
+  adj[a].push({to:b, w});
+  adj[b].push({to:a, w});
+}
+
+function drawGraph() {
+  const svg = document.getElementById('graphSVG');
+  svg.innerHTML = '';
+
+  edges.forEach(e => {
+    const na = nodes[e.a], nb = nodes[e.b];
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', na.cx); line.setAttribute('y1', na.cy);
+    line.setAttribute('x2', nb.cx); line.setAttribute('y2', nb.cy);
+    line.classList.add('edge');
+    line.id = `edge-${e.a}-${e.b}`;
+    svg.appendChild(line);
+
+    const wt = document.createElementNS('http://www.w3.org/2000/svg','text');
+    wt.setAttribute('x', (na.cx+nb.cx)/2);
+    wt.setAttribute('y', (na.cy+nb.cy)/2 - 4);
+    wt.classList.add('edge-weight');
+    wt.textContent = e.w;
+    svg.appendChild(wt);
+  });
+
+  nodes.forEach(nd => {
+    const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circle.setAttribute('cx', nd.cx); circle.setAttribute('cy', nd.cy); circle.setAttribute('r', NODE_R);
+    circle.classList.add('node-circle');
+    svg.appendChild(circle);
+    nd.circleEl = circle;
+
+    const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+    label.setAttribute('x', nd.cx); label.setAttribute('y', nd.cy);
+    label.classList.add('node-label');
+    label.textContent = nd.label;
+    svg.appendChild(label);
+    nd.labelEl = label;
+  });
+}
+
+function edgeEl(a,b) {
+  return document.getElementById(`edge-${a}-${b}`) || document.getElementById(`edge-${b}-${a}`);
+}
+
+function computeSteps(start) {
+  const n = nodes.length;
+  const inMST = new Array(n).fill(false);
+  inMST[start] = true;
+  const steps = [{type:'addNode', v:start}];
+  let total = 0, edgesUsed = 0;
+
+  while (edgesUsed < n - 1) {
+    let best = null;
+    const candidates = [];
+    for (let u = 0; u < n; u++) {
+      if (!inMST[u]) continue;
+      for (const {to:v, w} of adj[u]) {
+        if (!inMST[v]) {
+          candidates.push({u,v,w});
+          if (!best || w < best.w) best = {u,v,w};
+        }
+      }
+    }
+    if (!best) break; // disconnected graph, stop
+
+    steps.push({type:'candidates', edges: candidates.map(c => [c.u,c.v])});
+    steps.push({type:'pick', u:best.u, v:best.v, w:best.w});
+    inMST[best.v] = true;
+    total += best.w;
+    edgesUsed++;
+    steps.push({type:'addNode', v: best.v, runningTotal: total});
+  }
+
+  steps.push({type:'finish', total});
+  return steps;
+}
+
+function doStep() {
+  if (stepIdx >= steps.length) return;
+  const s = steps[stepIdx++];
+
+  if (s.type === 'addNode') {
+    nodes[s.v].circleEl.classList.add('inmst');
+    nodes[s.v].labelEl.classList.add('inmst');
+    setStatus(s.runningTotal !== undefined
+      ? `${nodes[s.v].label} added to MST. Running total = ${s.runningTotal}`
+      : `Starting from ${nodes[s.v].label}.`);
+  } else if (s.type === 'candidates') {
+    s.edges.forEach(([u,v]) => { const el = edgeEl(u,v); if (el) el.classList.add('candidate'); });
+    setStatus(`Comparing ${s.edges.length} edge(s) crossing the MST boundary…`);
+  } else if (s.type === 'pick') {
+    document.querySelectorAll('.edge.candidate').forEach(el => el.classList.remove('candidate'));
+    const el = edgeEl(s.u, s.v);
+    if (el) el.classList.add('tree');
+    setStatus(`Picked cheapest crossing edge: ${nodes[s.u].label}-${nodes[s.v].label} (weight ${s.w})`);
+  } else if (s.type === 'finish') {
+    document.getElementById('mstTotal').textContent = `MST total weight = ${s.total}`;
+    setStatus(`✅ MST complete.`);
+    clearTimer();
+    document.getElementById('sortBtn').textContent = 'Run ▶';
+  }
+}
+
+function startRun() {
+  if (autoTimer) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+  if (stepIdx >= steps.length) return;
+  document.getElementById('sortBtn').textContent = 'Pause ⏸';
+  const delay = 1100 - parseInt(document.getElementById('speedSlider').value);
+  autoTimer = setInterval(() => {
+    if (stepIdx >= steps.length) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+    doStep();
+  }, delay);
+}
+
+function resetRun() {
+  clearTimer();
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  drawGraph();
+  document.getElementById('mstTotal').textContent = '';
+  steps = computeSteps(0);
+  stepIdx = 0;
+  setStatus(`Reset. ${steps.length} steps ready.`);
+}
+
+function setStatus(msg) { document.getElementById('status').textContent = msg; }
+function clearTimer() { clearInterval(autoTimer); autoTimer = null; }
+
+const divider = document.getElementById('divider');
+const leftPanel = document.querySelector('.left-panel');
+let isDragging = false;
+divider.addEventListener('mousedown', () => { isDragging = true; document.body.style.userSelect = 'none'; });
+document.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  const w = e.clientX;
+  if (w < 250 || w > window.innerWidth - 250) return;
+  leftPanel.style.width = w + 'px';
+});
+document.addEventListener('mouseup', () => { isDragging = false; document.body.style.userSelect = 'auto'; });
+</script>
+</body>
+</html>

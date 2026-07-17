@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Kruskal's Algorithm Visualization</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet"/>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Orbitron',sans-serif; background:#000; color:white; display:flex; height:100vh; overflow:hidden; }
+  .left-panel { width:33%; min-width:250px; background:#111; border-right:2px solid #0ff3; padding:2rem; overflow-y:auto; }
+  .left-panel h2 { color:#0ff; margin-bottom:1rem; font-size:1.8rem; }
+  .tree-container { background:#1a1a1a; border:2px solid #0ff3; border-radius:10px; height:220px; margin-bottom:0.6rem; position:relative; overflow:hidden; }
+  #graphSVG { width:100%; height:100%; display:block; }
+  .node-circle { fill:#0ff1; stroke:#0ff; stroke-width:2; transition:stroke 0.3s ease, fill 0.3s ease; }
+  .node-label { font-family:'Orbitron',sans-serif; font-size:11px; text-anchor:middle; dominant-baseline:central; pointer-events:none; fill:#0ff; }
+  .edge { stroke:#0ff3; stroke-width:1.5; transition:stroke 0.3s ease, stroke-width 0.3s ease; }
+  .edge.considering { stroke:gold; stroke-width:2; }
+  .edge.tree { stroke:#0f0; stroke-width:2.5; }
+  .edge.rejected { stroke:#e24b4a; stroke-width:1.5; }
+  .edge-weight { font-family:'Orbitron',sans-serif; font-size:9px; fill:#0ff8; text-anchor:middle; }
+  .row-label { font-size:0.6rem; color:#0ff8; margin-bottom:4px; }
+  .edge-list { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:10px; }
+  .edge-chip { border:2px solid #0ff; border-radius:6px; padding:2px 6px; font-size:0.62rem; color:#0ff; transition:all 0.3s ease; }
+  .edge-chip.considering { border-color:gold; color:gold; }
+  .edge-chip.accepted    { border-color:#0f0; color:#0f0; }
+  .edge-chip.rejected    { border-color:#e24b4a; color:#e24b4a; opacity:0.6; }
+  #mstTotal { font-size:0.75rem; color:#0f0; text-align:center; margin-bottom:0.5rem; }
+  .controls { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:1rem; }
+  .btn { background:#0ff3; padding:0.6rem 1rem; border:none; border-radius:8px; cursor:pointer; color:black; font-family:'Orbitron',sans-serif; font-size:0.8rem; transition:background 0.3s; }
+  .btn:hover { background:#0ff; }
+  .btn:disabled { opacity:0.3; cursor:not-allowed; }
+  .speed-row { display:flex; align-items:center; gap:8px; margin-bottom:1.2rem; font-size:0.75rem; color:#0ff; }
+  input[type=range] { flex:1; accent-color:#0ff; }
+  #status { font-size:0.75rem; color:#0ff; min-height:1.2rem; margin-bottom:1rem; text-align:center; }
+  .code-block h3 { color:#0ff; margin-bottom:0.5rem; font-size:1.2rem; }
+  pre { background:#000; padding:1rem; border-radius:8px; border:1px solid #0ff3; color:#0ff; overflow-x:auto; font-size:0.8rem; line-height:1.4rem; }
+  #divider { width:6px; background:#0ff3; cursor:col-resize; flex-shrink:0; }
+  #divider:hover { background:#0ff; }
+  .right-panel { flex:1; min-width:250px; padding:2rem; overflow-y:auto; }
+  .right-panel h1 { color:#0ff; font-size:2rem; margin-bottom:1rem; }
+  .right-panel p { font-size:1rem; color:#ccc; line-height:1.7; margin-bottom:1.2rem; }
+  .right-panel h2 { color:#0ff; font-size:1.3rem; margin:1.5rem 0 0.5rem; }
+  .right-panel ul { margin-left:1.2rem; color:#ccc; line-height:1.8; }
+  .highlight { color:#0ff; font-weight:bold; }
+  .legend { display:flex; gap:1.5rem; flex-wrap:wrap; margin-bottom:1.5rem; font-size:0.75rem; color:#ccc; }
+  .legend-item { display:flex; align-items:center; gap:6px; }
+  .legend-dot { width:14px; height:14px; border-radius:50%; border:2px solid; }
+</style>
+</head>
+<body>
+
+<div class="left-panel">
+  <h2>Kruskal's Algorithm (MST)</h2>
+
+  <div class="tree-container" id="treeContainer">
+    <svg id="graphSVG"></svg>
+  </div>
+
+  <div class="row-label">Edges, sorted by weight (ascending)</div>
+  <div class="edge-list" id="edgeList"></div>
+  <div id="mstTotal"></div>
+
+  <div id="status">Press "New Graph" to start</div>
+
+  <div class="controls">
+    <button class="btn" id="newBtn"   onclick="generateGraph()">New Graph</button>
+    <button class="btn" id="sortBtn"  onclick="startRun()" disabled>Run ▶</button>
+    <button class="btn" id="stepBtn"  onclick="doStep()"    disabled>Step</button>
+    <button class="btn" id="resetBtn" onclick="resetRun()"  disabled>Reset</button>
+  </div>
+
+  <div class="speed-row">
+    <span>Slow</span>
+    <input type="range" id="speedSlider" min="100" max="1000" value="500" step="50"/>
+    <span>Fast</span>
+  </div>
+
+  <div class="code-block">
+    <h3>Kruskal's Algorithm Code</h3>
+    <pre><code>function kruskal(edges, n) {
+  edges.sort((a, b) => a.weight - b.weight);
+
+  const parent = Array.from({length: n}, (_, i) => i);
+  function find(x) { return parent[x] === x ? x : (parent[x] = find(parent[x])); }
+  function union(a, b) { parent[find(a)] = find(b); }
+
+  const mst = [];
+  let totalWeight = 0;
+
+  for (const edge of edges) {
+    if (find(edge.u) !== find(edge.v)) {
+      union(edge.u, edge.v);   // merge the two components
+      mst.push(edge);
+      totalWeight += edge.weight;
+    }
+    // else: would form a cycle — reject
+  }
+
+  return { mst, totalWeight };
+}</code></pre>
+  </div>
+</div>
+
+<div id="divider"></div>
+
+<div class="right-panel">
+  <h1>How Kruskal's Algorithm Works</h1>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="border-color:gold"></div>Currently considering</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#0f0"></div>Accepted into MST</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#e24b4a"></div>Rejected — would form a cycle</div>
+  </div>
+
+  <p>
+    Rather than growing one tree outward like Prim's, Kruskal's algorithm looks at the whole edge list at once: sort every edge by weight, then greedily accept each one as long as it doesn't connect two nodes that are already connected (which would create a cycle).
+  </p>
+
+  <h2>Step by step</h2>
+  <ul>
+    <li>Sort <span class="highlight">all edges</span> by weight, ascending.</li>
+    <li>Track which "component" each node currently belongs to, using a <span class="highlight">union-find</span> (disjoint-set) structure.</li>
+    <li>For each edge in sorted order (gold), check whether its two endpoints are already in the same component.</li>
+    <li>If they're in <span class="highlight">different</span> components, accept the edge (green) and merge the components.</li>
+    <li>If they're already in the <span class="highlight">same</span> component, reject it (red) — adding it would create a cycle, which a tree can't have.</li>
+    <li>Stop once n-1 edges have been accepted (all nodes are in one component).</li>
+  </ul>
+
+  <h2>Why does the cheapest-first order work?</h2>
+  <p>
+    By the same cut-property that justifies Prim's algorithm: whenever an edge is the lightest one connecting two currently-separate components, some minimum spanning tree must include it — so accepting it can never make the final result worse.
+  </p>
+
+  <h2>Complexity</h2>
+  <p>
+    Time: <span class="highlight">O(E log E)</span> — dominated by sorting the edges; union-find operations are nearly O(1) amortized (with path compression and union by rank).<br/>
+    Space: <span class="highlight">O(V)</span> for the union-find structure.
+  </p>
+
+  <h2>When is it used?</h2>
+  <ul>
+    <li>Network design when the full edge list is available up front and the graph is sparse.</li>
+    <li>Clustering — stopping Kruskal's early (before merging into a single tree) is a classic way to build k clusters.</li>
+    <li>Circuit design and any minimum-cost connectivity problem.</li>
+  </ul>
+
+  <h2>Compared to Prim's Algorithm</h2>
+  <ul>
+    <li><span class="highlight">Kruskal's (this):</span> globally sorts edges once, uses union-find to avoid cycles — O(E log E), well-suited to sparse graphs.</li>
+    <li><span class="highlight">Prim's:</span> grows a single connected tree from a starting node using a priority queue — O(E log V), often faster on dense graphs.</li>
+    <li>Both are greedy, and both are guaranteed to find a correct minimum spanning tree — they differ only in exploration order and data structures.</li>
+  </ul>
+</div>
+
+<script>
+const NODE_R = 18;
+let nodes = [], edges = [];
+let steps = [], stepIdx = 0, autoTimer = null;
+const LABELS = ['A','B','C','D','E','F'];
+
+function generateGraph() {
+  clearTimer();
+  const n = 6;
+  nodes = [];
+  const svg = document.getElementById('graphSVG');
+  const W = svg.clientWidth || 300, H = svg.clientHeight || 220;
+  const cx = W/2, cy = H/2, R = Math.min(W,H)/2 - 35;
+
+  for (let i = 0; i < n; i++) {
+    const angle = (i * 2*Math.PI/n) - Math.PI/2;
+    nodes.push({ id:i, label:LABELS[i], cx: cx + R*Math.cos(angle), cy: cy + R*Math.sin(angle),
+                 circleEl:null, labelEl:null });
+  }
+
+  edges = [];
+  const adjSet = new Set();
+  const order = [...Array(n).keys()].sort(() => Math.random()-0.5);
+  for (let i = 1; i < order.length; i++) {
+    const a = order[i], b = order[Math.floor(Math.random()*i)];
+    addEdge(a, b, adjSet);
+  }
+  const extra = Math.floor(Math.random()*3) + 1;
+  for (let k = 0; k < extra; k++) {
+    const a = Math.floor(Math.random()*n), b = Math.floor(Math.random()*n);
+    if (a !== b) addEdge(a,b,adjSet);
+  }
+
+  drawGraph();
+  drawEdgeList();
+  steps = computeSteps();
+  stepIdx = 0;
+  document.getElementById('mstTotal').textContent = '';
+  document.getElementById('sortBtn').disabled = false;
+  document.getElementById('stepBtn').disabled = false;
+  document.getElementById('resetBtn').disabled = false;
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  setStatus(`${edges.length} edges. ${steps.length} steps ready.`);
+}
+
+function addEdge(a, b, adjSet) {
+  const key = a<b ? `${a}-${b}` : `${b}-${a}`;
+  if (adjSet.has(key)) return;
+  adjSet.add(key);
+  const w = Math.floor(Math.random()*9)+1;
+  edges.push({id: edges.length, a,b,w});
+}
+
+function drawGraph() {
+  const svg = document.getElementById('graphSVG');
+  svg.innerHTML = '';
+
+  edges.forEach(e => {
+    const na = nodes[e.a], nb = nodes[e.b];
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', na.cx); line.setAttribute('y1', na.cy);
+    line.setAttribute('x2', nb.cx); line.setAttribute('y2', nb.cy);
+    line.classList.add('edge');
+    line.id = `edge-${e.id}`;
+    svg.appendChild(line);
+
+    const wt = document.createElementNS('http://www.w3.org/2000/svg','text');
+    wt.setAttribute('x', (na.cx+nb.cx)/2);
+    wt.setAttribute('y', (na.cy+nb.cy)/2 - 4);
+    wt.classList.add('edge-weight');
+    wt.textContent = e.w;
+    svg.appendChild(wt);
+  });
+
+  nodes.forEach(nd => {
+    const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circle.setAttribute('cx', nd.cx); circle.setAttribute('cy', nd.cy); circle.setAttribute('r', NODE_R);
+    circle.classList.add('node-circle');
+    svg.appendChild(circle);
+    nd.circleEl = circle;
+
+    const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+    label.setAttribute('x', nd.cx); label.setAttribute('y', nd.cy);
+    label.classList.add('node-label');
+    label.textContent = nd.label;
+    svg.appendChild(label);
+    nd.labelEl = label;
+  });
+}
+
+function drawEdgeList() {
+  const sorted = edges.slice().sort((a,b) => a.w - b.w);
+  const list = document.getElementById('edgeList');
+  list.innerHTML = '';
+  sorted.forEach(e => {
+    const chip = document.createElement('div');
+    chip.className = 'edge-chip';
+    chip.id = `chip-${e.id}`;
+    chip.textContent = `${nodes[e.a].label}-${nodes[e.b].label}:${e.w}`;
+    list.appendChild(chip);
+  });
+}
+
+function find(parent, x) {
+  if (parent[x] !== x) parent[x] = find(parent, parent[x]);
+  return parent[x];
+}
+
+function computeSteps() {
+  const n = nodes.length;
+  const sorted = edges.slice().sort((a,b) => a.w - b.w);
+  const parent = Array.from({length:n}, (_,i) => i);
+  const steps = [];
+  let total = 0, used = 0;
+
+  for (const e of sorted) {
+    steps.push({type:'consider', id:e.id});
+    const ra = find(parent, e.a), rb = find(parent, e.b);
+    if (ra !== rb) {
+      parent[ra] = rb;
+      total += e.w;
+      used++;
+      steps.push({type:'accept', id:e.id, total});
+    } else {
+      steps.push({type:'reject', id:e.id});
+    }
+  }
+
+  steps.push({type:'finish', total, used, n});
+  return steps;
+}
+
+function doStep() {
+  if (stepIdx >= steps.length) return;
+  const s = steps[stepIdx++];
+
+  if (s.type === 'consider') {
+    document.getElementById(`edge-${s.id}`).classList.add('considering');
+    document.getElementById(`chip-${s.id}`).classList.add('considering');
+    const e = edges[s.id];
+    setStatus(`Considering edge ${nodes[e.a].label}-${nodes[e.b].label} (weight ${e.w})…`);
+  } else if (s.type === 'accept') {
+    document.getElementById(`edge-${s.id}`).classList.remove('considering');
+    document.getElementById(`edge-${s.id}`).classList.add('tree');
+    document.getElementById(`chip-${s.id}`).classList.remove('considering');
+    document.getElementById(`chip-${s.id}`).classList.add('accepted');
+    setStatus(`Accepted — connects two separate components. Running total = ${s.total}`);
+  } else if (s.type === 'reject') {
+    document.getElementById(`edge-${s.id}`).classList.remove('considering');
+    document.getElementById(`edge-${s.id}`).classList.add('rejected');
+    document.getElementById(`chip-${s.id}`).classList.remove('considering');
+    document.getElementById(`chip-${s.id}`).classList.add('rejected');
+    setStatus(`Rejected — both endpoints already connected (would form a cycle).`);
+  } else if (s.type === 'finish') {
+    document.getElementById('mstTotal').textContent = `MST total weight = ${s.total} (${s.used}/${s.n - 1} edges used)`;
+    setStatus(`✅ MST complete.`);
+    clearTimer();
+    document.getElementById('sortBtn').textContent = 'Run ▶';
+  }
+}
+
+function startRun() {
+  if (autoTimer) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+  if (stepIdx >= steps.length) return;
+  document.getElementById('sortBtn').textContent = 'Pause ⏸';
+  const delay = 1100 - parseInt(document.getElementById('speedSlider').value);
+  autoTimer = setInterval(() => {
+    if (stepIdx >= steps.length) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+    doStep();
+  }, delay);
+}
+
+function resetRun() {
+  clearTimer();
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  drawGraph();
+  drawEdgeList();
+  document.getElementById('mstTotal').textContent = '';
+  steps = computeSteps();
+  stepIdx = 0;
+  setStatus(`Reset. ${steps.length} steps ready.`);
+}
+
+function setStatus(msg) { document.getElementById('status').textContent = msg; }
+function clearTimer() { clearInterval(autoTimer); autoTimer = null; }
+
+const divider = document.getElementById('divider');
+const leftPanel = document.querySelector('.left-panel');
+let isDragging = false;
+divider.addEventListener('mousedown', () => { isDragging = true; document.body.style.userSelect = 'none'; });
+document.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  const w = e.clientX;
+  if (w < 250 || w > window.innerWidth - 250) return;
+  leftPanel.style.width = w + 'px';
+});
+document.addEventListener('mouseup', () => { isDragging = false; document.body.style.userSelect = 'auto'; });
+</script>
+</body>
+</html>

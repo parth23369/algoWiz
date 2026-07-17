@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Palindrome Partitioning - Partition DP</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet"/>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Orbitron',sans-serif; background:#000; color:white; display:flex; height:100vh; overflow:hidden; }
+  .left-panel { width:33%; min-width:250px; background:#111; border-right:2px solid #0ff3; padding:2rem; overflow-y:auto; }
+  .left-panel h2 { color:#0ff; margin-bottom:1rem; font-size:1.8rem; }
+  .string-box { font-size:0.85rem; color:#0ff; margin-bottom:1rem; }
+  .tree-container { background:#1a1a1a; border:2px solid #0ff3; border-radius:10px; height:280px; margin-bottom:1rem; overflow:auto; padding:6px; }
+  #palTable { display:inline-grid; gap:2px; margin-bottom:14px; }
+  .cell { width:26px; height:24px; display:flex; align-items:center; justify-content:center; font-size:0.6rem; border-radius:4px; }
+  .cell.header { color:#0ff8; font-weight:bold; }
+  .cell.value { background:#0ff1; border:1.5px solid #0ff; color:#0ff; transition:all 0.3s ease; }
+  .cell.value.empty { background:transparent; border-color:#0ff2; color:#0ff5; }
+  .cell.value.visiting { border-color:gold; background:#ffd7001a; color:gold; }
+  .cell.value.truecell { border-color:#0f0; background:#00ff001a; color:#0f0; }
+  .cell.value.falsecell { border-color:#e24b4a; background:#e24b4a1a; color:#e24b4a; }
+  .row-label { font-size:0.65rem; color:#0ff8; margin-bottom:4px; }
+  .array-row { display:flex; gap:4px; }
+  .arr-cell { min-width:30px; height:30px; display:flex; align-items:center; justify-content:center; font-size:0.65rem; border-radius:6px; background:#0ff1; border:2px solid #0ff; color:#0ff; transition:all 0.3s ease; flex-direction:column; }
+  .arr-cell.empty { background:transparent; border-color:#0ff2; color:#0ff5; }
+  .arr-cell.visiting { border-color:gold; background:#ffd7001a; color:gold; }
+  .arr-cell.path { border-color:#0f0; background:#00ff001a; color:#0f0; }
+  .idx { font-size:0.5rem; color:#0ff8; }
+  .controls { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:1rem; }
+  .btn { background:#0ff3; padding:0.6rem 1rem; border:none; border-radius:8px; cursor:pointer; color:black; font-family:'Orbitron',sans-serif; font-size:0.8rem; transition:background 0.3s; }
+  .btn:hover { background:#0ff; }
+  .btn:disabled { opacity:0.3; cursor:not-allowed; }
+  .speed-row { display:flex; align-items:center; gap:8px; margin-bottom:1.2rem; font-size:0.75rem; color:#0ff; }
+  input[type=range] { flex:1; accent-color:#0ff; }
+  #status { font-size:0.75rem; color:#0ff; min-height:1.2rem; margin-bottom:1rem; text-align:center; }
+  .code-block h3 { color:#0ff; margin-bottom:0.5rem; font-size:1.2rem; }
+  pre { background:#000; padding:1rem; border-radius:8px; border:1px solid #0ff3; color:#0ff; overflow-x:auto; font-size:0.8rem; line-height:1.4rem; }
+  #divider { width:6px; background:#0ff3; cursor:col-resize; flex-shrink:0; }
+  #divider:hover { background:#0ff; }
+  .right-panel { flex:1; min-width:250px; padding:2rem; overflow-y:auto; }
+  .right-panel h1 { color:#0ff; font-size:2rem; margin-bottom:1rem; }
+  .right-panel p { font-size:1rem; color:#ccc; line-height:1.7; margin-bottom:1.2rem; }
+  .right-panel h2 { color:#0ff; font-size:1.3rem; margin:1.5rem 0 0.5rem; }
+  .right-panel ul { margin-left:1.2rem; color:#ccc; line-height:1.8; }
+  .highlight { color:#0ff; font-weight:bold; }
+  .legend { display:flex; gap:1.5rem; flex-wrap:wrap; margin-bottom:1.5rem; font-size:0.75rem; color:#ccc; }
+  .legend-item { display:flex; align-items:center; gap:6px; }
+  .legend-dot { width:14px; height:14px; border-radius:4px; border:2px solid; }
+</style>
+</head>
+<body>
+
+<div class="left-panel">
+  <h2>Palindrome Partitioning (Partition DP)</h2>
+  <div class="string-box" id="stringBox">Press "New String" to start</div>
+
+  <div class="tree-container" id="treeContainer">
+    <div class="row-label">isPal[i][j] — is s[i..j] a palindrome?</div>
+    <div id="palTable"></div>
+    <div class="row-label">cutDp[i] = min cuts for s[0..i]</div>
+    <div class="array-row" id="cutRow"></div>
+  </div>
+
+  <div id="status"></div>
+
+  <div class="controls">
+    <button class="btn" id="newBtn"   onclick="generateString()">New String</button>
+    <button class="btn" id="sortBtn"  onclick="startRun()" disabled>Run ▶</button>
+    <button class="btn" id="stepBtn"  onclick="doStep()"    disabled>Step</button>
+    <button class="btn" id="resetBtn" onclick="resetRun()"  disabled>Reset</button>
+  </div>
+
+  <div class="speed-row">
+    <span>Slow</span>
+    <input type="range" id="speedSlider" min="50" max="800" value="150" step="25"/>
+    <span>Fast</span>
+  </div>
+
+  <div class="code-block">
+    <h3>Partition DP Code</h3>
+    <pre><code>function minCut(s) {
+  const n = s.length;
+  const isPal = Array.from({length:n}, () => new Array(n).fill(false));
+
+  // isPal[i][j] true if s[i..j] is a palindrome
+  for (let len = 1; len <= n; len++) {
+    for (let i = 0; i + len - 1 < n; i++) {
+      const j = i + len - 1;
+      if (s[i] === s[j] && (len <= 2 || isPal[i+1][j-1])) {
+        isPal[i][j] = true;
+      }
+    }
+  }
+
+  const cutDp = new Array(n).fill(Infinity);
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j <= i; j++) {
+      if (isPal[j][i]) {
+        cutDp[i] = Math.min(cutDp[i], j === 0 ? 0 : cutDp[j-1] + 1);
+      }
+    }
+  }
+
+  return cutDp[n-1]; // minimum cuts needed
+}</code></pre>
+  </div>
+</div>
+
+<div id="divider"></div>
+
+<div class="right-panel">
+  <h1>How Palindrome Partitioning Works</h1>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="border-color:gold"></div>Currently checking</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#0f0"></div>Is a palindrome / on cut path</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#e24b4a"></div>Not a palindrome</div>
+  </div>
+
+  <p>
+    The goal is to split a string into the fewest possible pieces where every piece is a palindrome. This is <span class="highlight">partition DP</span>: instead of a fixed grid over two sequences, the state is "where do I place the next cut," and each decision partitions the remaining string into independent sub-problems.
+  </p>
+
+  <h2>Step by step</h2>
+  <ul>
+    <li><strong>Phase 1 — precompute palindromes:</strong> fill <span class="highlight">isPal[i][j]</span> for every substring, built up by increasing length: a substring is a palindrome if its ends match and the inside (if any) is also a palindrome.</li>
+    <li><strong>Phase 2 — find minimum cuts:</strong> define <span class="highlight">cutDp[i]</span> as the fewest cuts needed to partition <code>s[0..i]</code> into palindromes.</li>
+    <li>For each i, try every possible last piece <code>s[j..i]</code>: if it's a palindrome, then <code>cutDp[i] = min(cutDp[i], cutDp[j-1] + 1)</code> (or 0 cuts if j = 0, since the whole prefix is one palindrome piece).</li>
+    <li><span class="highlight">Backtrack</span> from cutDp[n-1] to recover exactly where each cut falls.</li>
+  </ul>
+
+  <h2>Recurrence</h2>
+  <p>
+    isPal[i][j] = s[i]=s[j] AND (j-i&lt;2 OR isPal[i+1][j-1])<br/>
+    cutDp[i] = min over palindromic s[j..i] of ( j=0 ? 0 : cutDp[j-1] + 1 )
+  </p>
+
+  <h2>Complexity</h2>
+  <p>
+    Time: <span class="highlight">O(n²)</span> — O(n²) to build the palindrome table, O(n²) to compute cuts.<br/>
+    Space: <span class="highlight">O(n²)</span> for the palindrome table, <span class="highlight">O(n)</span> for cutDp.
+  </p>
+
+  <h2>When is it used?</h2>
+  <ul>
+    <li>Text segmentation problems (splitting into valid "words" or structures).</li>
+    <li>Matrix Chain Multiplication and Burst Balloons are the same partition-DP shape over intervals instead of palindromes.</li>
+    <li>Any "split into k pieces, minimize/maximize something per piece" problem.</li>
+  </ul>
+
+  <h2>Compared to other DP shapes</h2>
+  <ul>
+    <li><span class="highlight">Partition DP (this):</span> a decision at index i chooses a cut point j, splitting the problem into independent left/right pieces — the defining trait of interval/partition DP.</li>
+    <li><span class="highlight">DP on strings (LCS):</span> compares two full sequences step by step; no notion of "cutting" one sequence into independent chunks.</li>
+    <li><span class="highlight">1D DP (House Robber):</span> each state depends on a fixed lookback, not on trying every possible split point.</li>
+  </ul>
+</div>
+
+<script>
+let s = '';
+let n = 0;
+let palCells = [], cutCells = [], charCells = [];
+let steps = [], stepIdx = 0, autoTimer = null;
+
+function randomPalindromeString(len) {
+  // Build from a small alphabet so palindromic substrings occur often.
+  const alphabet = 'AAB';
+  let arr = [];
+  for (let i = 0; i < len; i++) arr.push(alphabet[Math.floor(Math.random()*alphabet.length)]);
+  return arr.join('');
+}
+
+function generateString() {
+  clearTimer();
+  n = 7;
+  s = randomPalindromeString(n);
+  document.getElementById('stringBox').innerHTML = `String: <strong>${s}</strong>`;
+
+  buildTable();
+  steps = computeSteps();
+  stepIdx = 0;
+  document.getElementById('sortBtn').disabled = false;
+  document.getElementById('stepBtn').disabled = false;
+  document.getElementById('resetBtn').disabled = false;
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  setStatus(`String ready. ${steps.length} steps.`);
+}
+
+function buildTable() {
+  const table = document.getElementById('palTable');
+  table.innerHTML = '';
+  table.style.gridTemplateColumns = `26px repeat(${n}, 26px)`;
+  palCells = [];
+
+  const corner = document.createElement('div');
+  corner.className = 'cell header';
+  corner.textContent = '';
+  table.appendChild(corner);
+  for (let j = 0; j < n; j++) {
+    const h = document.createElement('div');
+    h.className = 'cell header';
+    h.textContent = s[j];
+    table.appendChild(h);
+  }
+
+  for (let i = 0; i < n; i++) {
+    const rl = document.createElement('div');
+    rl.className = 'cell header';
+    rl.textContent = s[i];
+    table.appendChild(rl);
+    palCells[i] = [];
+    for (let j = 0; j < n; j++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell value empty';
+      if (j < i) cell.style.visibility = 'hidden';
+      table.appendChild(cell);
+      palCells[i][j] = cell;
+    }
+  }
+
+  const cutRow = document.getElementById('cutRow');
+  cutRow.innerHTML = '';
+  cutCells = [];
+  for (let i = 0; i < n; i++) {
+    const c = document.createElement('div');
+    c.className = 'arr-cell empty';
+    c.innerHTML = `<span class="idx">cut${i}</span>`;
+    cutRow.appendChild(c);
+    cutCells.push(c);
+  }
+}
+
+function computeSteps() {
+  const isPal = Array.from({length:n}, () => new Array(n).fill(false));
+  const steps = [];
+
+  for (let len = 1; len <= n; len++) {
+    for (let i = 0; i + len - 1 < n; i++) {
+      const j = i + len - 1;
+      steps.push({type:'checkPal', i, j});
+      const ok = s[i] === s[j] && (len <= 2 || isPal[i+1][j-1]);
+      isPal[i][j] = ok;
+      steps.push({type:'fillPal', i, j, ok});
+    }
+  }
+
+  const cutDp = new Array(n).fill(Infinity);
+  const cutFrom = new Array(n).fill(-1);
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j <= i; j++) {
+      if (isPal[j][i]) {
+        steps.push({type:'considerCut', i, j});
+        const candidate = j === 0 ? 0 : cutDp[j-1] + 1;
+        if (candidate < cutDp[i]) {
+          cutDp[i] = candidate;
+          cutFrom[i] = j;
+          steps.push({type:'updateCut', i, value: cutDp[i]});
+        }
+      }
+    }
+  }
+
+  // backtrack
+  const cuts = [];
+  let i = n - 1;
+  while (i >= 0) {
+    const j = cutFrom[i];
+    cuts.push([j, i]);
+    steps.push({type:'backvisit', i, j});
+    i = j - 1;
+  }
+  cuts.reverse();
+
+  steps.push({type:'finish', total: cutDp[n-1], pieces: cuts.map(([a,b]) => s.slice(a,b+1))});
+  return steps;
+}
+
+function doStep() {
+  if (stepIdx >= steps.length) return;
+  const st = steps[stepIdx++];
+  if (st.type === 'checkPal') {
+    palCells[st.i][st.j].classList.add('visiting');
+    setStatus(`Checking if "${s.slice(st.i, st.j+1)}" is a palindrome…`);
+  } else if (st.type === 'fillPal') {
+    const c = palCells[st.i][st.j];
+    c.classList.remove('visiting','empty');
+    c.classList.add(st.ok ? 'truecell' : 'falsecell');
+    c.textContent = st.ok ? 'T' : 'F';
+    setStatus(`isPal[${st.i}][${st.j}] = ${st.ok}`);
+  } else if (st.type === 'considerCut') {
+    setStatus(`Trying last piece s[${st.j}..${st.i}] = "${s.slice(st.j, st.i+1)}"`);
+    cutCells[st.i].classList.add('visiting');
+  } else if (st.type === 'updateCut') {
+    cutCells[st.i].innerHTML = `${st.value}<span class="idx">cut${st.i}</span>`;
+    cutCells[st.i].classList.remove('empty');
+    setStatus(`cutDp[${st.i}] improved to ${st.value}`);
+  } else if (st.type === 'backvisit') {
+    cutCells[st.i].classList.remove('visiting');
+    cutCells[st.i].classList.add('path');
+    setStatus(`Cut recovered: piece s[${st.j}..${st.i}]`);
+  } else if (st.type === 'finish') {
+    cutCells.forEach(c => c.classList.remove('visiting'));
+    setStatus(`✅ Min cuts = ${st.total}. Pieces: ${st.pieces.join(' | ')}`);
+    clearTimer();
+    document.getElementById('sortBtn').textContent = 'Run ▶';
+  }
+}
+
+function startRun() {
+  if (autoTimer) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+  if (stepIdx >= steps.length) return;
+  document.getElementById('sortBtn').textContent = 'Pause ⏸';
+  const delay = 850 - parseInt(document.getElementById('speedSlider').value);
+  autoTimer = setInterval(() => {
+    if (stepIdx >= steps.length) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+    doStep();
+  }, delay);
+}
+
+function resetRun() {
+  clearTimer();
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  buildTable();
+  steps = computeSteps();
+  stepIdx = 0;
+  setStatus(`Reset. ${steps.length} steps.`);
+}
+
+function setStatus(msg) { document.getElementById('status').textContent = msg; }
+function clearTimer() { clearInterval(autoTimer); autoTimer = null; }
+
+const divider = document.getElementById('divider');
+const leftPanel = document.querySelector('.left-panel');
+let isDragging = false;
+divider.addEventListener('mousedown', () => { isDragging = true; document.body.style.userSelect = 'none'; });
+document.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  const w = e.clientX;
+  if (w < 250 || w > window.innerWidth - 250) return;
+  leftPanel.style.width = w + 'px';
+});
+document.addEventListener('mouseup', () => { isDragging = false; document.body.style.userSelect = 'auto'; });
+</script>
+</body>
+</html>

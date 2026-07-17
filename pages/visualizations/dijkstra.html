@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dijkstra's Algorithm Visualization</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet"/>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Orbitron',sans-serif; background:#000; color:white; display:flex; height:100vh; overflow:hidden; }
+  .left-panel { width:33%; min-width:250px; background:#111; border-right:2px solid #0ff3; padding:2rem; overflow-y:auto; }
+  .left-panel h2 { color:#0ff; margin-bottom:1.5rem; font-size:1.8rem; }
+  .tree-container { background:#1a1a1a; border:2px solid #0ff3; border-radius:10px; height:280px; margin-bottom:1rem; position:relative; overflow:hidden; }
+  #graphSVG { width:100%; height:100%; display:block; }
+  .node-circle { fill:#0ff1; stroke:#0ff; stroke-width:2; transition:stroke 0.3s ease, fill 0.3s ease; }
+  .node-circle.visiting { stroke:gold; fill:#ffd7001a; }
+  .node-circle.done     { stroke:#0f0; fill:#00ff001a; }
+  .node-label { font-family:'Orbitron',sans-serif; font-size:11px; text-anchor:middle; dominant-baseline:central; pointer-events:none; fill:#0ff; }
+  .node-label.visiting { fill:gold; }
+  .node-label.done { fill:#0f0; }
+  .dist-label { font-family:'Orbitron',sans-serif; font-size:9px; text-anchor:middle; fill:#0ff8; }
+  .dist-label.updated { fill:#f0f; }
+  .edge { stroke:#0ff3; stroke-width:1.5; transition:stroke 0.3s ease, stroke-width 0.3s ease; }
+  .edge.relaxing { stroke:gold; stroke-width:2.5; }
+  .edge.tree { stroke:#0f0; stroke-width:2.5; }
+  .edge-weight { font-family:'Orbitron',sans-serif; font-size:9px; fill:#0ff8; text-anchor:middle; }
+  .controls { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:1rem; }
+  .btn { background:#0ff3; padding:0.6rem 1rem; border:none; border-radius:8px; cursor:pointer; color:black; font-family:'Orbitron',sans-serif; font-size:0.8rem; transition:background 0.3s; }
+  .btn:hover { background:#0ff; }
+  .btn:disabled { opacity:0.3; cursor:not-allowed; }
+  .speed-row { display:flex; align-items:center; gap:8px; margin-bottom:1.2rem; font-size:0.75rem; color:#0ff; }
+  input[type=range] { flex:1; accent-color:#0ff; }
+  #status { font-size:0.75rem; color:#0ff; min-height:1.2rem; margin-bottom:1rem; text-align:center; }
+  .code-block h3 { color:#0ff; margin-bottom:0.5rem; font-size:1.2rem; }
+  pre { background:#000; padding:1rem; border-radius:8px; border:1px solid #0ff3; color:#0ff; overflow-x:auto; font-size:0.8rem; line-height:1.4rem; }
+  #divider { width:6px; background:#0ff3; cursor:col-resize; flex-shrink:0; }
+  #divider:hover { background:#0ff; }
+  .right-panel { flex:1; min-width:250px; padding:2rem; overflow-y:auto; }
+  .right-panel h1 { color:#0ff; font-size:2rem; margin-bottom:1rem; }
+  .right-panel p { font-size:1rem; color:#ccc; line-height:1.7; margin-bottom:1.2rem; }
+  .right-panel h2 { color:#0ff; font-size:1.3rem; margin:1.5rem 0 0.5rem; }
+  .right-panel ul { margin-left:1.2rem; color:#ccc; line-height:1.8; }
+  .highlight { color:#0ff; font-weight:bold; }
+  .legend { display:flex; gap:1.5rem; flex-wrap:wrap; margin-bottom:1.5rem; font-size:0.75rem; color:#ccc; }
+  .legend-item { display:flex; align-items:center; gap:6px; }
+  .legend-dot { width:14px; height:14px; border-radius:50%; border:2px solid; }
+</style>
+</head>
+<body>
+
+<div class="left-panel">
+  <h2>Dijkstra's Algorithm</h2>
+
+  <div class="tree-container" id="treeContainer">
+    <svg id="graphSVG"></svg>
+  </div>
+
+  <div id="status">Press "New Graph" to start</div>
+
+  <div class="controls">
+    <button class="btn" id="newBtn"   onclick="generateGraph()">New Graph</button>
+    <button class="btn" id="sortBtn"  onclick="startRun()" disabled>Run ▶</button>
+    <button class="btn" id="stepBtn"  onclick="doStep()"    disabled>Step</button>
+    <button class="btn" id="resetBtn" onclick="resetRun()"  disabled>Reset</button>
+  </div>
+
+  <div class="speed-row">
+    <span>Slow</span>
+    <input type="range" id="speedSlider" min="100" max="1000" value="500" step="50"/>
+    <span>Fast</span>
+  </div>
+
+  <div class="code-block">
+    <h3>Dijkstra Code</h3>
+    <pre><code>function dijkstra(graph, source) {
+  const dist = {};
+  for (const v in graph) dist[v] = Infinity;
+  dist[source] = 0;
+
+  const visited = new Set();
+
+  while (visited.size < Object.keys(graph).length) {
+    // pick the unvisited node with smallest dist
+    let u = null;
+    for (const v in graph) {
+      if (!visited.has(v) && (u === null || dist[v] < dist[u])) u = v;
+    }
+    if (dist[u] === Infinity) break;  // remaining nodes unreachable
+
+    visited.add(u);
+
+    for (const [v, weight] of graph[u]) {
+      if (dist[u] + weight < dist[v]) {
+        dist[v] = dist[u] + weight;   // relax the edge
+      }
+    }
+  }
+
+  return dist;
+}</code></pre>
+  </div>
+</div>
+
+<div id="divider"></div>
+
+<div class="right-panel">
+  <h1>How Dijkstra's Algorithm Works</h1>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="border-color:#0ff"></div>Unvisited</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:gold"></div>Currently visiting</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#0f0"></div>Finalized (shortest distance known)</div>
+  </div>
+
+  <p>
+    Dijkstra's algorithm finds the shortest path from a source node to every other node in a weighted graph with non-negative edge weights. It's greedy: at each step it locks in the closest unvisited node, trusting that no shorter path to it could exist through a node that's farther away.
+  </p>
+
+  <h2>Step by step</h2>
+  <ul>
+    <li>Set the source's distance to 0 and every other node's distance to <span class="highlight">∞</span>.</li>
+    <li>Repeatedly pick the <span class="highlight">unvisited node with the smallest known distance</span> (gold).</li>
+    <li><span class="highlight">Relax</span> every edge out of it: if going through this node gives a shorter path to a neighbor, update that neighbor's distance (magenta flash).</li>
+    <li>Mark the node <span class="highlight">finalized</span> (green) — its shortest distance is now guaranteed correct.</li>
+    <li>Repeat until every reachable node is finalized.</li>
+  </ul>
+
+  <h2>Why this greedy choice works</h2>
+  <p>
+    Since all edge weights are non-negative, the closest unvisited node can never be reached by an even shorter path later through a currently-farther node — so it's safe to finalize it immediately, no backtracking needed.
+  </p>
+
+  <h2>Complexity</h2>
+  <p>
+    Time: <span class="highlight">O(V²)</span> with a simple linear scan for the minimum each round (as shown), or <span class="highlight">O((V+E) log V)</span> with a binary heap priority queue.<br/>
+    Space: <span class="highlight">O(V)</span> for distances and the visited set.
+  </p>
+
+  <h2>When is it used?</h2>
+  <ul>
+    <li>GPS and road-network shortest-route finding.</li>
+    <li>Network routing protocols (e.g. OSPF).</li>
+    <li>Any weighted graph shortest-path problem with non-negative weights.</li>
+  </ul>
+
+  <h2>Compared to other algorithms</h2>
+  <ul>
+    <li><span class="highlight">Dijkstra (this):</span> O((V+E) log V) with a heap; fails with negative edge weights.</li>
+    <li><span class="highlight">Bellman-Ford:</span> O(V·E) — slower, but correctly handles negative weights and can detect negative cycles.</li>
+    <li><span class="highlight">BFS:</span> O(V+E) — equivalent to Dijkstra when every edge weight is exactly 1.</li>
+  </ul>
+</div>
+
+<script>
+const NODE_R = 18;
+let nodes = [], edges = [], adj = {};
+let steps = [], stepIdx = 0, autoTimer = null;
+const LABELS = ['A','B','C','D','E','F'];
+
+function generateGraph() {
+  clearTimer();
+  const n = 6;
+  nodes = [];
+  const svg = document.getElementById('graphSVG');
+  const W = svg.clientWidth || 300, H = svg.clientHeight || 280;
+  const cx = W/2, cy = H/2, R = Math.min(W,H)/2 - 35;
+
+  for (let i = 0; i < n; i++) {
+    const angle = (i * 2*Math.PI/n) - Math.PI/2;
+    nodes.push({ id:i, label:LABELS[i], cx: cx + R*Math.cos(angle), cy: cy + R*Math.sin(angle),
+                 circleEl:null, labelEl:null, distEl:null });
+  }
+
+  // Build a random connected weighted graph: spanning tree + a few extra edges
+  edges = [];
+  adj = {}; nodes.forEach(nd => adj[nd.id] = []);
+  const order = [...Array(n).keys()].sort(() => Math.random()-0.5);
+  for (let i = 1; i < order.length; i++) {
+    const a = order[i], b = order[Math.floor(Math.random()*i)];
+    addEdge(a, b);
+  }
+  const extra = Math.floor(Math.random()*3) + 1;
+  for (let k = 0; k < extra; k++) {
+    const a = Math.floor(Math.random()*n), b = Math.floor(Math.random()*n);
+    if (a !== b && !adj[a].some(e => e.to===b)) addEdge(a,b);
+  }
+
+  drawGraph();
+  steps = computeSteps(0);
+  stepIdx = 0;
+  document.getElementById('sortBtn').disabled = false;
+  document.getElementById('stepBtn').disabled = false;
+  document.getElementById('resetBtn').disabled = false;
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  setStatus(`Source = A. ${steps.length} steps ready.`);
+}
+
+function addEdge(a, b) {
+  const w = Math.floor(Math.random()*9)+1;
+  edges.push({a,b,w});
+  adj[a].push({to:b, w});
+  adj[b].push({to:a, w});
+}
+
+function drawGraph() {
+  const svg = document.getElementById('graphSVG');
+  svg.innerHTML = '';
+
+  edges.forEach(e => {
+    const na = nodes[e.a], nb = nodes[e.b];
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', na.cx); line.setAttribute('y1', na.cy);
+    line.setAttribute('x2', nb.cx); line.setAttribute('y2', nb.cy);
+    line.classList.add('edge');
+    line.id = `edge-${e.a}-${e.b}`;
+    svg.appendChild(line);
+
+    const wt = document.createElementNS('http://www.w3.org/2000/svg','text');
+    wt.setAttribute('x', (na.cx+nb.cx)/2);
+    wt.setAttribute('y', (na.cy+nb.cy)/2 - 4);
+    wt.classList.add('edge-weight');
+    wt.textContent = e.w;
+    svg.appendChild(wt);
+  });
+
+  nodes.forEach(nd => {
+    const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circle.setAttribute('cx', nd.cx); circle.setAttribute('cy', nd.cy); circle.setAttribute('r', NODE_R);
+    circle.classList.add('node-circle');
+    svg.appendChild(circle);
+    nd.circleEl = circle;
+
+    const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+    label.setAttribute('x', nd.cx); label.setAttribute('y', nd.cy);
+    label.classList.add('node-label');
+    label.textContent = nd.label;
+    svg.appendChild(label);
+    nd.labelEl = label;
+
+    const dist = document.createElementNS('http://www.w3.org/2000/svg','text');
+    dist.setAttribute('x', nd.cx); dist.setAttribute('y', nd.cy - NODE_R - 8);
+    dist.classList.add('dist-label');
+    dist.textContent = nd.id === 0 ? '0' : '∞';
+    svg.appendChild(dist);
+    nd.distEl = dist;
+  });
+}
+
+function edgeEl(a,b) {
+  return document.getElementById(`edge-${a}-${b}`) || document.getElementById(`edge-${b}-${a}`);
+}
+
+function computeSteps(source) {
+  const n = nodes.length;
+  const dist = new Array(n).fill(Infinity);
+  dist[source] = 0;
+  const visited = new Array(n).fill(false);
+  const steps = [];
+
+  for (let iter = 0; iter < n; iter++) {
+    let u = -1;
+    for (let v = 0; v < n; v++) if (!visited[v] && (u === -1 || dist[v] < dist[u])) u = v;
+    if (u === -1 || dist[u] === Infinity) break;
+
+    steps.push({type:'visit', u});
+    visited[u] = true;
+
+    for (const {to:v, w} of adj[u]) {
+      if (visited[v]) continue;
+      steps.push({type:'check', u, v});
+      if (dist[u] + w < dist[v]) {
+        dist[v] = dist[u] + w;
+        steps.push({type:'relax', u, v, newDist: dist[v]});
+      }
+    }
+    steps.push({type:'finalize', u});
+  }
+
+  steps.push({type:'finish', dist: dist.slice()});
+  return steps;
+}
+
+function doStep() {
+  if (stepIdx >= steps.length) return;
+  const s = steps[stepIdx++];
+
+  if (s.type === 'visit') {
+    nodes[s.u].circleEl.classList.add('visiting');
+    nodes[s.u].labelEl.classList.add('visiting');
+    setStatus(`Visiting ${nodes[s.u].label} (smallest known distance so far)…`);
+  } else if (s.type === 'check') {
+    const el = edgeEl(s.u, s.v);
+    if (el) el.classList.add('relaxing');
+    setStatus(`Checking edge ${nodes[s.u].label}→${nodes[s.v].label}…`);
+  } else if (s.type === 'relax') {
+    nodes[s.v].distEl.textContent = s.newDist;
+    nodes[s.v].distEl.classList.add('updated');
+    setStatus(`Relaxed: dist[${nodes[s.v].label}] = ${s.newDist}`);
+  } else if (s.type === 'finalize') {
+    document.querySelectorAll('.edge.relaxing').forEach(el => el.classList.remove('relaxing'));
+    nodes.forEach(nd => nd.distEl.classList.remove('updated'));
+    nodes[s.u].circleEl.classList.remove('visiting');
+    nodes[s.u].labelEl.classList.remove('visiting');
+    nodes[s.u].circleEl.classList.add('done');
+    nodes[s.u].labelEl.classList.add('done');
+    setStatus(`${nodes[s.u].label} finalized.`);
+  } else if (s.type === 'finish') {
+    const summary = nodes.map((nd,i) => `${nd.label}:${s.dist[i]===Infinity?'∞':s.dist[i]}`).join(' ');
+    setStatus(`✅ Done. ${summary}`);
+    clearTimer();
+    document.getElementById('sortBtn').textContent = 'Run ▶';
+  }
+}
+
+function startRun() {
+  if (autoTimer) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+  if (stepIdx >= steps.length) return;
+  document.getElementById('sortBtn').textContent = 'Pause ⏸';
+  const delay = 1100 - parseInt(document.getElementById('speedSlider').value);
+  autoTimer = setInterval(() => {
+    if (stepIdx >= steps.length) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+    doStep();
+  }, delay);
+}
+
+function resetRun() {
+  clearTimer();
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  drawGraph();
+  steps = computeSteps(0);
+  stepIdx = 0;
+  setStatus(`Reset. ${steps.length} steps ready.`);
+}
+
+function setStatus(msg) { document.getElementById('status').textContent = msg; }
+function clearTimer() { clearInterval(autoTimer); autoTimer = null; }
+
+const divider = document.getElementById('divider');
+const leftPanel = document.querySelector('.left-panel');
+let isDragging = false;
+divider.addEventListener('mousedown', () => { isDragging = true; document.body.style.userSelect = 'none'; });
+document.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  const w = e.clientX;
+  if (w < 250 || w > window.innerWidth - 250) return;
+  leftPanel.style.width = w + 'px';
+});
+document.addEventListener('mouseup', () => { isDragging = false; document.body.style.userSelect = 'auto'; });
+</script>
+</body>
+</html>

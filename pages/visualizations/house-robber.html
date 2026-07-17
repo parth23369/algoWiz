@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>House Robber - 1D DP Visualization</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet"/>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Orbitron',sans-serif; background:#000; color:white; display:flex; height:100vh; overflow:hidden; }
+  .left-panel { width:33%; min-width:250px; background:#111; border-right:2px solid #0ff3; padding:2rem; overflow-y:auto; }
+  .left-panel h2 { color:#0ff; margin-bottom:1.5rem; font-size:1.8rem; }
+  .tree-container { background:#1a1a1a; border:2px solid #0ff3; border-radius:10px; height:260px; margin-bottom:1rem; overflow:auto; padding:12px; }
+  .row-label { font-size:0.65rem; color:#0ff8; margin-bottom:4px; }
+  .array-row { display:flex; gap:4px; margin-bottom:16px; }
+  .cell { min-width:36px; height:36px; display:flex; align-items:center; justify-content:center; font-size:0.75rem; border-radius:6px; background:#0ff1; border:2px solid #0ff; color:#0ff; transition:all 0.3s ease; flex-direction:column; }
+  .cell.empty { background:transparent; border-color:#0ff2; color:#0ff5; }
+  .cell.visiting { border-color:gold; background:#ffd7001a; color:gold; }
+  .cell.robbed { border-color:#0f0; background:#00ff001a; color:#0f0; }
+  .cell.skipped { border-color:#e24b4a; background:#e24b4a1a; color:#e24b4a; }
+  .idx { font-size:0.55rem; color:#0ff8; }
+  .controls { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:1rem; }
+  .btn { background:#0ff3; padding:0.6rem 1rem; border:none; border-radius:8px; cursor:pointer; color:black; font-family:'Orbitron',sans-serif; font-size:0.8rem; transition:background 0.3s; }
+  .btn:hover { background:#0ff; }
+  .btn:disabled { opacity:0.3; cursor:not-allowed; }
+  .speed-row { display:flex; align-items:center; gap:8px; margin-bottom:1.2rem; font-size:0.75rem; color:#0ff; }
+  input[type=range] { flex:1; accent-color:#0ff; }
+  #status { font-size:0.75rem; color:#0ff; min-height:1.2rem; margin-bottom:1rem; text-align:center; }
+  .code-block h3 { color:#0ff; margin-bottom:0.5rem; font-size:1.2rem; }
+  pre { background:#000; padding:1rem; border-radius:8px; border:1px solid #0ff3; color:#0ff; overflow-x:auto; font-size:0.8rem; line-height:1.4rem; }
+  #divider { width:6px; background:#0ff3; cursor:col-resize; flex-shrink:0; }
+  #divider:hover { background:#0ff; }
+  .right-panel { flex:1; min-width:250px; padding:2rem; overflow-y:auto; }
+  .right-panel h1 { color:#0ff; font-size:2rem; margin-bottom:1rem; }
+  .right-panel p { font-size:1rem; color:#ccc; line-height:1.7; margin-bottom:1.2rem; }
+  .right-panel h2 { color:#0ff; font-size:1.3rem; margin:1.5rem 0 0.5rem; }
+  .right-panel ul { margin-left:1.2rem; color:#ccc; line-height:1.8; }
+  .highlight { color:#0ff; font-weight:bold; }
+  .legend { display:flex; gap:1.5rem; flex-wrap:wrap; margin-bottom:1.5rem; font-size:0.75rem; color:#ccc; }
+  .legend-item { display:flex; align-items:center; gap:6px; }
+  .legend-dot { width:14px; height:14px; border-radius:4px; border:2px solid; }
+</style>
+</head>
+<body>
+
+<div class="left-panel">
+  <h2>House Robber (1D DP)</h2>
+
+  <div class="tree-container" id="treeContainer">
+    <div class="row-label">Houses (value if robbed)</div>
+    <div class="array-row" id="housesRow"></div>
+    <div class="row-label">dp[i] = max loot using houses[0..i-1]</div>
+    <div class="array-row" id="dpRow"></div>
+  </div>
+
+  <div id="status">Press "New Houses" to start</div>
+
+  <div class="controls">
+    <button class="btn" id="newBtn"   onclick="generateHouses()">New Houses</button>
+    <button class="btn" id="sortBtn"  onclick="startRun()" disabled>Run ▶</button>
+    <button class="btn" id="stepBtn"  onclick="doStep()"    disabled>Step</button>
+    <button class="btn" id="resetBtn" onclick="resetRun()"  disabled>Reset</button>
+  </div>
+
+  <div class="speed-row">
+    <span>Slow</span>
+    <input type="range" id="speedSlider" min="50" max="800" value="250" step="25"/>
+    <span>Fast</span>
+  </div>
+
+  <div class="code-block">
+    <h3>1D DP Code</h3>
+    <pre><code>function rob(houses) {
+  const n = houses.length;
+  const dp = new Array(n + 1).fill(0);
+  dp[1] = houses[0];
+
+  for (let i = 2; i <= n; i++) {
+    dp[i] = Math.max(
+      dp[i - 1],                 // skip house i-1
+      dp[i - 2] + houses[i - 1]  // rob house i-1
+    );
+  }
+
+  return dp[n];
+}</code></pre>
+  </div>
+</div>
+
+<div id="divider"></div>
+
+<div class="right-panel">
+  <h1>How House Robber (1D DP) Works</h1>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="border-color:#0ff2"></div>Not yet computed</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:gold"></div>Currently computing</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#0f0"></div>Robbed (in optimal plan)</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#e24b4a"></div>Skipped</div>
+  </div>
+
+  <p>
+    You can't rob two adjacent houses (the alarm connects them), so for each house you face one choice: rob it and add its value to the best plan two houses back, or skip it and keep the best plan from one house back. That's a 1D DP — no grid needed, just a single rolling array.
+  </p>
+
+  <h2>Step by step</h2>
+  <ul>
+    <li>Define <span class="highlight">dp[i]</span> as the max loot possible using the first i houses.</li>
+    <li>Base cases: <span class="highlight">dp[0] = 0</span> (no houses), <span class="highlight">dp[1] = houses[0]</span>.</li>
+    <li>For each further house, compare <span class="highlight">dp[i-1]</span> (skip it) against <span class="highlight">dp[i-2] + houses[i-1]</span> (rob it).</li>
+    <li>Keep the larger value as <span class="highlight">dp[i]</span>.</li>
+    <li>Once the array is full, <span class="highlight">backtrack</span> from the end: if dp[i] equals dp[i-1], that house was skipped; otherwise it was robbed, and you jump back two houses.</li>
+  </ul>
+
+  <h2>Recurrence</h2>
+  <p>
+    dp[i] = max( dp[i-1], dp[i-2] + houses[i-1] ), with dp[0] = 0 and dp[1] = houses[0].
+  </p>
+
+  <h2>Complexity</h2>
+  <p>
+    Time: <span class="highlight">O(n)</span> — one pass, one decision per house.<br/>
+    Space: <span class="highlight">O(n)</span> for the full array, or <span class="highlight">O(1)</span> if you only keep the last two values (a common space optimization for 1D DP).
+  </p>
+
+  <h2>When is it used?</h2>
+  <ul>
+    <li>Any "choose non-adjacent items to maximize a total" problem.</li>
+    <li>Scheduling with a cooldown/gap constraint.</li>
+    <li>Circular variants (House Robber II) and tree variants (House Robber III) build directly on this.</li>
+  </ul>
+
+  <h2>Compared to other DP shapes</h2>
+  <ul>
+    <li><span class="highlight">1D DP (this):</span> state depends on a fixed number of previous positions in a single array — O(n) states.</li>
+    <li><span class="highlight">2D DP (e.g. Knapsack):</span> state needs two dimensions (item index and capacity) — O(n·W) states.</li>
+    <li><span class="highlight">Brute force:</span> O(2ⁿ) — tries every subset of houses; DP collapses overlapping subproblems into O(n).</li>
+  </ul>
+</div>
+
+<script>
+let houses = [];
+let n = 0;
+let dp = [];
+let dpCells = [], houseCells = [];
+let steps = [], stepIdx = 0, autoTimer = null;
+
+function generateHouses() {
+  clearTimer();
+  n = 8;
+  houses = Array.from({length:n}, () => Math.floor(Math.random()*20)+1);
+  drawRows();
+  steps = computeSteps();
+  stepIdx = 0;
+  document.getElementById('sortBtn').disabled = false;
+  document.getElementById('stepBtn').disabled = false;
+  document.getElementById('resetBtn').disabled = false;
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  setStatus(`${n} houses generated. ${steps.length} steps ready.`);
+}
+
+function drawRows() {
+  const hRow = document.getElementById('housesRow');
+  const dRow = document.getElementById('dpRow');
+  hRow.innerHTML = ''; dRow.innerHTML = '';
+  houseCells = []; dpCells = [];
+
+  houses.forEach((v, idx) => {
+    const c = document.createElement('div');
+    c.className = 'cell';
+    c.innerHTML = `${v}<span class="idx">h${idx}</span>`;
+    hRow.appendChild(c);
+    houseCells.push(c);
+  });
+
+  for (let i = 0; i <= n; i++) {
+    const c = document.createElement('div');
+    c.className = 'cell empty';
+    c.innerHTML = `${i===0?'0':''}<span class="idx">dp${i}</span>`;
+    dRow.appendChild(c);
+    dpCells.push(c);
+  }
+  dpCells[0].classList.remove('empty');
+}
+
+function computeSteps() {
+  const dpArr = new Array(n+1).fill(0);
+  const steps = [];
+  if (n >= 1) {
+    steps.push({type:'visitHouse', h:0});
+    dpArr[1] = houses[0];
+    steps.push({type:'fill', i:1, value: dpArr[1]});
+  }
+  for (let i = 2; i <= n; i++) {
+    steps.push({type:'visitHouse', h:i-1});
+    const skip = dpArr[i-1];
+    const take = dpArr[i-2] + houses[i-1];
+    dpArr[i] = Math.max(skip, take);
+    steps.push({type:'fill', i, value: dpArr[i]});
+  }
+  // backtrack
+  let i = n;
+  const robbedIdx = [];
+  while (i > 0) {
+    steps.push({type:'backvisit', i});
+    if (i === 1 || dpArr[i] !== dpArr[i-1]) {
+      robbedIdx.push(i-1);
+      steps.push({type:'rob', h:i-1});
+      i -= 2;
+    } else {
+      steps.push({type:'skip', h:i-1});
+      i -= 1;
+    }
+  }
+  steps.push({type:'finish', total: dpArr[n], robbed: robbedIdx});
+  return steps;
+}
+
+function doStep() {
+  if (stepIdx >= steps.length) return;
+  const s = steps[stepIdx++];
+  if (s.type === 'visitHouse') {
+    houseCells[s.h].classList.add('visiting');
+    setStatus(`Considering house ${s.h}…`);
+  } else if (s.type === 'fill') {
+    houseCells.forEach(c => c.classList.remove('visiting'));
+    dpCells[s.i].classList.remove('empty');
+    dpCells[s.i].innerHTML = `${s.value}<span class="idx">dp${s.i}</span>`;
+    setStatus(`dp[${s.i}] = ${s.value}`);
+  } else if (s.type === 'backvisit') {
+    dpCells[s.i].classList.add('visiting');
+    setStatus(`Backtracking at dp[${s.i}]…`);
+  } else if (s.type === 'rob') {
+    houseCells[s.h].classList.add('robbed');
+    setStatus(`House ${s.h} was robbed.`);
+  } else if (s.type === 'skip') {
+    houseCells[s.h].classList.add('skipped');
+    setStatus(`House ${s.h} was skipped.`);
+  } else if (s.type === 'finish') {
+    dpCells.forEach(c => c.classList.remove('visiting'));
+    const list = s.robbed.slice().sort((a,b)=>a-b).join(', ');
+    setStatus(`✅ Max loot = ${s.total}. Houses robbed: ${list}.`);
+    clearTimer();
+    document.getElementById('sortBtn').textContent = 'Run ▶';
+  }
+}
+
+function startRun() {
+  if (autoTimer) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+  if (stepIdx >= steps.length) return;
+  document.getElementById('sortBtn').textContent = 'Pause ⏸';
+  const delay = 850 - parseInt(document.getElementById('speedSlider').value);
+  autoTimer = setInterval(() => {
+    if (stepIdx >= steps.length) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+    doStep();
+  }, delay);
+}
+
+function resetRun() {
+  clearTimer();
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  drawRows();
+  steps = computeSteps();
+  stepIdx = 0;
+  setStatus(`Reset. ${steps.length} steps ready.`);
+}
+
+function setStatus(msg) { document.getElementById('status').textContent = msg; }
+function clearTimer() { clearInterval(autoTimer); autoTimer = null; }
+
+const divider = document.getElementById('divider');
+const leftPanel = document.querySelector('.left-panel');
+let isDragging = false;
+divider.addEventListener('mousedown', () => { isDragging = true; document.body.style.userSelect = 'none'; });
+document.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  const w = e.clientX;
+  if (w < 250 || w > window.innerWidth - 250) return;
+  leftPanel.style.width = w + 'px';
+});
+document.addEventListener('mouseup', () => { isDragging = false; document.body.style.userSelect = 'auto'; });
+</script>
+</body>
+</html>

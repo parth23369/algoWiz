@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Depth First Search Visualization</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet"/>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Orbitron', sans-serif;
+      background-color: #000;
+      color: white;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .left-panel {
+      width: 33%;
+      min-width: 250px;
+      background-color: #111;
+      border-right: 2px solid #0ff3;
+      padding: 2rem;
+      overflow-y: auto;
+    }
+
+    .left-panel h2 { color: #0ff; margin-bottom: 1.5rem; font-size: 1.8rem; }
+
+    /* ── Tree container: fixed height, SVG fills it ── */
+    .tree-container {
+      background-color: #1a1a1a;
+      border: 2px solid #0ff3;
+      border-radius: 10px;
+      height: 280px;
+      margin-bottom: 1rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #treeSVG {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* ── SVG node states (toggled via classList) ── */
+    .node-circle {
+      fill: #0ff1;
+      stroke: #0ff;
+      stroke-width: 2;
+      transition: stroke 0.3s ease, fill 0.3s ease;
+    }
+    .node-circle.visiting { stroke: gold;    fill: #ffd7001a; }
+    .node-circle.visited  { stroke: #e24b4a; fill: #e24b4a1a; }
+    .node-circle.path     { stroke: #0f0;    fill: #00ff001a; }
+    .node-circle.key      { stroke: #f0f;    fill: #ff00ff1a; }
+
+    .edge {
+      stroke: #0ff3;
+      stroke-width: 1.5;
+      transition: stroke 0.3s ease;
+    }
+    .edge.active { stroke: #0ff; }
+
+    .node-label {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 10px;
+      text-anchor: middle;
+      dominant-baseline: central;
+      pointer-events: none;
+      fill: #0ff;
+      transition: fill 0.3s ease;
+    }
+    .node-label.visiting { fill: gold; }
+    .node-label.visited  { fill: #e24b4a; }
+    .node-label.path     { fill: #0f0; }
+    .node-label.key      { fill: #f0f; }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .btn {
+      background-color: #0ff3;
+      padding: 0.6rem 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      color: black;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem;
+      transition: background 0.3s;
+    }
+    .btn:hover { background-color: #0ff; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .speed-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 1.2rem;
+      font-size: 0.75rem;
+      color: #0ff;
+    }
+    input[type=range] { flex: 1; accent-color: #0ff; }
+
+    #status {
+      font-size: 0.75rem;
+      color: #0ff;
+      min-height: 1.2rem;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    .code-block h3 { color: #0ff; margin-bottom: 0.5rem; font-size: 1.2rem; }
+    pre {
+      background-color: #000;
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid #0ff3;
+      color: #0ff;
+      overflow-x: auto;
+      font-size: 0.8rem;
+      line-height: 1.4rem;
+    }
+
+    /* ── Divider ── */
+    #divider {
+      width: 6px;
+      background: #0ff3;
+      cursor: col-resize;
+      flex-shrink: 0;
+    }
+    #divider:hover { background: #0ff; }
+
+    /* ── Right panel ── */
+    .right-panel {
+      flex: 1;
+      min-width: 250px;
+      padding: 2rem;
+      overflow-y: auto;
+    }
+    .right-panel h1 { color: #0ff; font-size: 2rem; margin-bottom: 1rem; }
+    .right-panel p  { font-size: 1rem; color: #ccc; line-height: 1.7; margin-bottom: 1.2rem; }
+    .right-panel h2 { color: #0ff; font-size: 1.3rem; margin: 1.5rem 0 0.5rem; }
+    .right-panel ul { margin-left: 1.2rem; color: #ccc; line-height: 1.8; }
+    .highlight { color: #0ff; font-weight: bold; }
+
+    .legend {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+      font-size: 0.75rem;
+      color: #ccc;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-dot  { width: 14px; height: 14px; border-radius: 50%; border: 2px solid; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════ LEFT PANEL ══════════════════ -->
+<div class="left-panel">
+  <h2>Depth-First Search</h2>
+
+  <div class="tree-container" id="treeContainer">
+    <svg id="treeSVG">
+      <!-- edges and nodes injected by JS -->
+    </svg>
+  </div>
+
+  <div id="status">Press "New Tree" to start</div>
+
+  <div class="controls">
+    <button class="btn" id="newBtn"   onclick="generateTree()">New Tree</button>
+    <button class="btn" id="keyBtn"   onclick="takeInput()">Key</button>
+    <button class="btn" id="sortBtn"  onclick="startSearch()" disabled>Search ▶</button>
+    <button class="btn" id="stepBtn"  onclick="doStep()"      disabled>Step</button>
+    <button class="btn" id="resetBtn" onclick="resetSearch()" disabled>Reset</button>
+  </div>
+
+  <div class="speed-row">
+    <span>Slow</span>
+    <input type="range" id="speedSlider" min="100" max="1000" value="500" step="50"/>
+    <span>Fast</span>
+  </div>
+
+  <div class="code-block">
+    <h3>DFS Code</h3>
+    <pre><code>function dfs(node, visited) {
+  if (!node || visited.has(node.id))
+    return;
+
+  visited.add(node.id);
+  // — currently visiting this node
+
+  if (node.value === key) {
+    // — found! mark as path
+    return;
+  }
+
+  dfs(node.left,  visited);
+  dfs(node.right, visited);
+  // — done, mark as visited
+}</code></pre>
+  </div>
+</div>
+
+<div id="divider"></div>
+
+<!-- ══════════════════ RIGHT PANEL ══════════════════ -->
+<div class="right-panel">
+  <h1>How Depth-First Search Works</h1>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="border-color:#f0f"></div>Key / Found</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#0ff"></div>Unvisited</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:gold"></div>Currently visiting</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#e24b4a"></div>Visited (backtracked)</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#0f0"></div>Found path</div>
+  </div>
+
+  <p>
+    Depth-First Search (DFS) is a graph/tree traversal algorithm that explores as far as possible
+    down each branch before backtracking. It dives deep first, then widens — the opposite of BFS.
+  </p>
+
+  <h2>Step by step</h2>
+  <ul>
+    <li>Start at the root node.</li>
+    <li>Mark it as <span class="highlight">currently visiting</span> (yellow).</li>
+    <li>Recurse into the left subtree first, then the right.</li>
+    <li>If the node matches the search key, mark it <span class="highlight">found</span> (green).</li>
+    <li>After exploring all children, mark the node <span class="highlight">visited</span> (red).</li>
+    <li>Backtrack up when a subtree is fully explored.</li>
+  </ul>
+
+  <h2>Complexity</h2>
+  <p>
+    Time: <span class="highlight">O(n)</span> — every node is visited at most once.<br/>
+    Space: <span class="highlight">O(h)</span> — h is tree height; the recursion stack goes as deep as the tree.
+  </p>
+
+  <h2>When is it used?</h2>
+  <ul>
+    <li>Finding a path between two nodes.</li>
+    <li>Topological sorting of a DAG.</li>
+    <li>Detecting cycles in a graph.</li>
+    <li>Solving maze and puzzle problems.</li>
+    <li>Pre/in/post-order tree traversals.</li>
+  </ul>
+
+  <h2>Compared to other algorithms</h2>
+  <ul>
+    <li><span class="highlight">BFS:</span> O(n) — explores level by level; better for shortest path in unweighted graphs.</li>
+    <li><span class="highlight">Dijkstra:</span> O((V+E) log V) — shortest path in weighted graphs.</li>
+    <li><span class="highlight">A*:</span> O(b^d) — heuristic-guided; optimal path in weighted graphs.</li>
+  </ul>
+</div>
+
+<!-- ══════════════════ JAVASCRIPT ══════════════════ -->
+<script>
+// ─────────────────────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────────────────────
+const NODE_R   = 20;   // circle radius
+const LEVEL_H  = 70;   // vertical gap between levels
+
+let nodes     = [];    // flat list of node objects
+let rootNode  = null;  // root of the BST
+let searchKey = null;  // value we're searching for
+let steps     = [];    // pre-computed DFS step list
+let stepIdx   = 0;
+let autoTimer = null;
+
+// ─────────────────────────────────────────────────────────────
+//  NODE OBJECT
+//  { id, value, left, right, cx, cy, circleEl, labelEl }
+// ─────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────
+//  1. GENERATE TREE
+// ─────────────────────────────────────────────────────────────
+function generateTree() {
+  clearTimer();
+  searchKey = null;
+
+  // 8 unique random values 10-99
+  const vals = [];
+  while (vals.length < 8) {
+    const v = Math.floor(Math.random() * 90) + 10;
+    if (!vals.includes(v)) vals.push(v);
+  }
+
+  // Build a BST so the tree is nicely structured
+  nodes    = [];
+  rootNode = null;
+  vals.forEach(v => { rootNode = bstInsert(rootNode, v); });
+
+  // Compute (cx, cy) for every node based on its position in the tree
+  const svg    = document.getElementById('treeSVG');
+  const W      = svg.clientWidth  || 300;
+  const H      = svg.clientHeight || 280;
+  assignPositions(rootNode, 0, W, 40, H);
+
+  drawTree();
+  steps   = [];
+  stepIdx = 0;
+
+  setButtonState(false);
+  document.getElementById('sortBtn').disabled  = true;  // need a key first
+  document.getElementById('stepBtn').disabled  = true;
+  document.getElementById('resetBtn').disabled = false;
+  setStatus('Tree ready — press "Key" to set a search target');
+}
+
+// ─── BST insert (returns new root) ───────────────────────────
+function bstInsert(node, value) {
+  if (!node) {
+    const n = { id: nodes.length, value, left: null, right: null, cx: 0, cy: 0,
+                circleEl: null, labelEl: null };
+    nodes.push(n);
+    return n;
+  }
+  if (value < node.value) node.left  = bstInsert(node.left,  value);
+  else                    node.right = bstInsert(node.right, value);
+  return node;
+}
+
+// ─── Assign pixel positions (recursive, like a tree layout) ──
+function assignPositions(node, xMin, xMax, y, svgH) {
+  if (!node) return;
+  node.cx = (xMin + xMax) / 2;
+  node.cy = y;
+  const mid = (xMin + xMax) / 2;
+  assignPositions(node.left,  xMin, mid, y + LEVEL_H, svgH);
+  assignPositions(node.right, mid,  xMax, y + LEVEL_H, svgH);
+}
+
+// ─────────────────────────────────────────────────────────────
+//  2. DRAW TREE (SVG)
+// ─────────────────────────────────────────────────────────────
+function drawTree() {
+  const svg = document.getElementById('treeSVG');
+  svg.innerHTML = '';   // clear
+
+  // ── Draw edges first (so they sit behind circles) ──────────
+  nodes.forEach(node => {
+    if (node.left)  drawEdge(svg, node, node.left);
+    if (node.right) drawEdge(svg, node, node.right);
+  });
+
+  // ── Draw nodes on top ──────────────────────────────────────
+  nodes.forEach(node => {
+    // group
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('data-id', node.id);
+
+    // circle
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', node.cx);
+    circle.setAttribute('cy', node.cy);
+    circle.setAttribute('r',  NODE_R);
+    circle.classList.add('node-circle');
+    g.appendChild(circle);
+    node.circleEl = circle;
+
+    // label
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', node.cx);
+    text.setAttribute('y', node.cy);
+    text.classList.add('node-label');
+    text.textContent = node.value;
+    g.appendChild(text);
+    node.labelEl = text;
+
+    svg.appendChild(g);
+  });
+}
+
+function drawEdge(svg, parent, child) {
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('x1', parent.cx);
+  line.setAttribute('y1', parent.cy);
+  line.setAttribute('x2', child.cx);
+  line.setAttribute('y2', child.cy);
+  line.classList.add('edge');
+  // store so we can highlight it during steps
+  line.setAttribute('data-from', parent.id);
+  line.setAttribute('data-to',   child.id);
+  svg.appendChild(line);
+}
+
+// ─────────────────────────────────────────────────────────────
+//  3. TAKE KEY INPUT
+// ─────────────────────────────────────────────────────────────
+function takeInput() {
+  if (!rootNode) { setStatus('Generate a tree first!'); return; }
+
+  const raw = prompt('Enter a value to search for:');
+  if (raw === null) return;                         // cancelled
+  const key = parseInt(raw, 10);
+  if (isNaN(key)) { setStatus('Invalid number.'); return; }
+
+  searchKey = key;
+
+  // Check if value exists so we can tell the user
+  const exists = nodes.some(n => n.value === key);
+
+  // Mark the key node magenta so user can see the target
+  resetVisuals();
+  nodes.forEach(n => {
+    if (n.value === key) {
+      n.circleEl.classList.add('key');
+      n.labelEl.classList.add('key');
+    }
+  });
+
+  // Pre-compute all DFS steps
+  steps   = computeDFSSteps(rootNode, key);
+  stepIdx = 0;
+
+  setButtonState(true);
+  setStatus(`Key set to ${key}. ${exists ? 'Value exists in tree.' : 'Value NOT in tree.'} ${steps.length} steps.`);
+}
+
+// ─────────────────────────────────────────────────────────────
+//  4. PRE-COMPUTE DFS STEPS
+//
+//  Each step = { type, nodeId, status }
+//  type: 'visit'   — entering a node (yellow)
+//        'found'   — node matches key (green)
+//        'done'    — subtree exhausted, backtrack (red)
+//        'finish'  — whole search complete
+// ─────────────────────────────────────────────────────────────
+function computeDFSSteps(root, key) {
+  const steps   = [];
+  const visited = new Set();
+  let found = false;
+
+  function dfs(node) {
+    if (!node || visited.has(node.id)) return;
+
+    // entering
+    steps.push({ type: 'visit', nodeId: node.id });
+
+    if (node.value === key) {
+      found = true;
+      steps.push({ type: 'found', nodeId: node.id });
+      steps.push({ type: 'finish', nodeId: node.id });
+      visited.add(node.id);
+      return;
+    }
+
+    visited.add(node.id);
+
+    // recurse left then right
+    dfs(node.left);
+    dfs(node.right);
+
+    // backtrack
+    if (!found) {
+      steps.push({ type: 'done', nodeId: node.id });
+    }
+  }
+
+  dfs(root);
+
+  if(!found){
+    steps.push({ type: 'finish' });
+  }
+
+  return steps;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  5. EXECUTE ONE STEP
+// ─────────────────────────────────────────────────────────────
+function doStep() {
+  if (stepIdx >= steps.length) return;
+
+  const step = steps[stepIdx++];
+  const node = step.nodeId !== undefined ? getNodeById(step.nodeId) : null;
+
+  if (step.type === 'visit') {
+    // entering — yellow
+    setNodeState(node, 'visiting');
+    setStatus(`Visiting node ${node.value}…`);
+
+  } else if (step.type === 'found') {
+    // found it — green
+    setNodeState(node, 'path');
+    setStatus(`✅ Found ${node.value}!`);
+    clearTimer();
+    document.getElementById('sortBtn').textContent = 'Search ▶';
+    stepIdx = steps.length;
+
+  } else if (step.type === 'done') {
+    // backtracking — red (only if not the found node)
+    setNodeState(node, 'visited');
+    setStatus(`Backtracking from ${node.value}`);
+
+  } else if (step.type === 'finish') {
+    setStatus(`❌ Search complete — ${searchKey} not in tree.`);
+    clearTimer();
+    document.getElementById('sortBtn').textContent = 'Search ▶';
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+//  6. AUTO-PLAY
+// ─────────────────────────────────────────────────────────────
+function startSearch() {
+  if (autoTimer) {
+    // pause
+    clearTimer();
+    document.getElementById('sortBtn').textContent = 'Search ▶';
+    return;
+  }
+  if (stepIdx >= steps.length) return;
+
+  document.getElementById('sortBtn').textContent = 'Pause ⏸';
+  const delay = 1100 - parseInt(document.getElementById('speedSlider').value);
+
+  autoTimer = setInterval(() => {
+    if (stepIdx >= steps.length) {
+      clearTimer();
+      document.getElementById('sortBtn').textContent = 'Search ▶';
+      return;
+    }
+    doStep();
+  }, delay);
+}
+
+// ─────────────────────────────────────────────────────────────
+//  7. RESET (keeps same tree + key, resets visuals)
+// ─────────────────────────────────────────────────────────────
+function resetSearch() {
+  clearTimer();
+  document.getElementById('sortBtn').textContent = 'Search ▶';
+
+  resetVisuals();
+
+  // Re-highlight the key node
+  if (searchKey !== null) {
+    nodes.forEach(n => {
+      if (n.value === searchKey) {
+        n.circleEl.classList.add('key');
+        n.labelEl.classList.add('key');
+      }
+    });
+  }
+
+  steps   = searchKey !== null ? computeDFSSteps(rootNode, searchKey) : [];
+  stepIdx = 0;
+
+  setStatus(searchKey !== null
+    ? `Reset. ${steps.length} steps ready.`
+    : 'Reset.');
+}
+
+// ─────────────────────────────────────────────────────────────
+//  HELPERS
+// ─────────────────────────────────────────────────────────────
+function getNodeById(id) {
+  return nodes.find(n => n.id === id);
+}
+
+function setNodeState(node, state) {
+  // state: 'visiting' | 'visited' | 'path' | 'key' | '' (default)
+  const states = ['visiting', 'visited', 'path', 'key'];
+  states.forEach(s => {
+    node.circleEl.classList.toggle(s, s === state);
+    node.labelEl.classList.toggle(s,  s === state);
+  });
+}
+
+function resetVisuals() {
+  nodes.forEach(n => setNodeState(n, ''));
+}
+
+function setStatus(msg) {
+  document.getElementById('status').textContent = msg;
+}
+
+function setButtonState(ready) {
+  document.getElementById('sortBtn').disabled  = !ready;
+  document.getElementById('stepBtn').disabled  = !ready;
+  document.getElementById('resetBtn').disabled = !ready;
+}
+
+function clearTimer() {
+  clearInterval(autoTimer);
+  autoTimer = null;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  DIVIDER DRAG
+// ─────────────────────────────────────────────────────────────
+const divider  = document.getElementById('divider');
+const leftPanel = document.querySelector('.left-panel');
+let isDragging  = false;
+
+divider.addEventListener('mousedown', () => {
+  isDragging = true;
+  document.body.style.userSelect = 'none';
+});
+document.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  const w = e.clientX;
+  if (w < 250 || w > window.innerWidth - 250) return;
+  leftPanel.style.width = w + 'px';
+});
+document.addEventListener('mouseup', () => {
+  isDragging = false;
+  document.body.style.userSelect = 'auto';
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>0/1 Knapsack Visualization</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet"/>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Orbitron', sans-serif;
+      background-color: #000;
+      color: white;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .left-panel {
+      width: 33%;
+      min-width: 250px;
+      background-color: #111;
+      border-right: 2px solid #0ff3;
+      padding: 2rem;
+      overflow-y: auto;
+    }
+
+    .left-panel h2 { color: #0ff; margin-bottom: 1.5rem; font-size: 1.8rem; }
+
+    /* ── Items row ── */
+    .items-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+    .item-chip {
+      background-color: #1a1a1a;
+      border: 2px solid #0ff3;
+      border-radius: 8px;
+      padding: 0.4rem 0.6rem;
+      font-size: 0.7rem;
+      color: #0ff;
+      transition: border-color 0.3s ease, background 0.3s ease, color 0.3s ease;
+    }
+    .item-chip.considering { border-color: gold;   color: gold; }
+    .item-chip.included    { border-color: #0f0;    color: #0f0; background-color: #00ff001a; }
+    .item-chip .cap-label  { display: block; color: #0ff8; font-size: 0.6rem; }
+
+    /* ── Table container: fixed height, scrolls if needed ── */
+    .tree-container {
+      background-color: #1a1a1a;
+      border: 2px solid #0ff3;
+      border-radius: 10px;
+      height: 260px;
+      margin-bottom: 1rem;
+      position: relative;
+      overflow: auto;
+      padding: 6px;
+    }
+
+    #dpTable {
+      display: inline-grid;
+      gap: 2px;
+    }
+
+    .cell {
+      width: 30px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      border-radius: 4px;
+    }
+
+    .cell.header {
+      color: #0ff8;
+      font-size: 0.6rem;
+    }
+
+    .cell.value {
+      background-color: #0ff1;
+      border: 1.5px solid #0ff;
+      color: #0ff;
+      transition: border-color 0.3s ease, background 0.3s ease, color 0.3s ease;
+    }
+    .cell.value.empty      { background-color: transparent; border-color: #0ff2; color: #0ff5; }
+    .cell.value.visiting   { border-color: gold;    background-color: #ffd7001a; color: gold; }
+    .cell.value.path       { border-color: #0f0;    background-color: #00ff001a; color: #0f0; }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .btn {
+      background-color: #0ff3;
+      padding: 0.6rem 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      color: black;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem;
+      transition: background 0.3s;
+    }
+    .btn:hover { background-color: #0ff; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .speed-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 1.2rem;
+      font-size: 0.75rem;
+      color: #0ff;
+    }
+    input[type=range] { flex: 1; accent-color: #0ff; }
+
+    #status {
+      font-size: 0.75rem;
+      color: #0ff;
+      min-height: 1.2rem;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    .code-block h3 { color: #0ff; margin-bottom: 0.5rem; font-size: 1.2rem; }
+    pre {
+      background-color: #000;
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid #0ff3;
+      color: #0ff;
+      overflow-x: auto;
+      font-size: 0.8rem;
+      line-height: 1.4rem;
+    }
+
+    /* ── Divider ── */
+    #divider {
+      width: 6px;
+      background: #0ff3;
+      cursor: col-resize;
+      flex-shrink: 0;
+    }
+    #divider:hover { background: #0ff; }
+
+    /* ── Right panel ── */
+    .right-panel {
+      flex: 1;
+      min-width: 250px;
+      padding: 2rem;
+      overflow-y: auto;
+    }
+    .right-panel h1 { color: #0ff; font-size: 2rem; margin-bottom: 1rem; }
+    .right-panel p  { font-size: 1rem; color: #ccc; line-height: 1.7; margin-bottom: 1.2rem; }
+    .right-panel h2 { color: #0ff; font-size: 1.3rem; margin: 1.5rem 0 0.5rem; }
+    .right-panel ul { margin-left: 1.2rem; color: #ccc; line-height: 1.8; }
+    .highlight { color: #0ff; font-weight: bold; }
+
+    .legend {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+      font-size: 0.75rem;
+      color: #ccc;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-dot  { width: 14px; height: 14px; border-radius: 4px; border: 2px solid; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════ LEFT PANEL ══════════════════ -->
+<div class="left-panel">
+  <h2>0/1 Knapsack</h2>
+
+  <div class="items-row" id="itemsRow"></div>
+
+  <div class="tree-container" id="treeContainer">
+    <div id="dpTable"></div>
+  </div>
+
+  <div id="status">Press "New Items" to start</div>
+
+  <div class="controls">
+    <button class="btn" id="newBtn"   onclick="generateItems()">New Items</button>
+    <button class="btn" id="sortBtn"  onclick="startRun()" disabled>Run ▶</button>
+    <button class="btn" id="stepBtn"  onclick="doStep()"    disabled>Step</button>
+    <button class="btn" id="resetBtn" onclick="resetRun()"  disabled>Reset</button>
+  </div>
+
+  <div class="speed-row">
+    <span>Slow</span>
+    <input type="range" id="speedSlider" min="50" max="800" value="200" step="25"/>
+    <span>Fast</span>
+  </div>
+
+  <div class="code-block">
+    <h3>DP Code (Tabulation)</h3>
+    <pre><code>function knapsack(weights, values, W) {
+  const n  = weights.length;
+  const dp = Array.from({ length: n + 1 },
+              () => new Array(W + 1).fill(0));
+
+  for (let i = 1; i <= n; i++) {
+    for (let w = 0; w <= W; w++) {
+      if (weights[i - 1] <= w) {
+        dp[i][w] = Math.max(
+          dp[i - 1][w],                       // exclude item
+          values[i - 1] + dp[i - 1][w - weights[i - 1]]  // include
+        );
+      } else {
+        dp[i][w] = dp[i - 1][w];              // can't fit
+      }
+    }
+  }
+
+  return dp[n][W];
+}</code></pre>
+  </div>
+</div>
+
+<div id="divider"></div>
+
+<!-- ══════════════════ RIGHT PANEL ══════════════════ -->
+<div class="right-panel">
+  <h1>How 0/1 Knapsack Works</h1>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="border-color:#0ff2"></div>Not yet filled</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#0ff"></div>Filled</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:gold"></div>Currently computing</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#0f0"></div>On the optimal path</div>
+  </div>
+
+  <p>
+    Given items with weights and values, and a knapsack of fixed capacity, the 0/1 Knapsack problem asks for the maximum value achievable — where each item can either be taken whole or left behind, never split. That "whole or nothing" rule is exactly why greedy strategies fail here and a full DP table is needed.
+  </p>
+
+  <h2>Step by step</h2>
+  <ul>
+    <li>Build a table <span class="highlight">dp[i][w]</span> — best value using the first i items with capacity w.</li>
+    <li>Row 0 and column 0 start at 0 (no items, or no capacity, means no value).</li>
+    <li>For each cell, mark it <span class="highlight">currently computing</span> (yellow).</li>
+    <li>If the current item's weight fits (<= w), compare <span class="highlight">excluding</span> it (<code>dp[i-1][w]</code>) against <span class="highlight">including</span> it (<code>value + dp[i-1][w-weight]</code>), and keep the larger.</li>
+    <li>If it doesn't fit, just carry down <code>dp[i-1][w]</code> — mark it filled (cyan).</li>
+    <li>Once the table is full, <span class="highlight">backtrack</span> from the bottom-right corner to recover which items were actually chosen — those cells are marked green.</li>
+  </ul>
+
+  <h2>Recurrence</h2>
+  <p>
+    dp[i][w] = max( dp[i-1][w], value[i] + dp[i-1][w - weight[i]] ) &nbsp;if weight[i] ≤ w,<br/>
+    else dp[i][w] = dp[i-1][w].
+  </p>
+
+  <h2>Complexity</h2>
+  <p>
+    Time: <span class="highlight">O(n · W)</span> — one computation per table cell.<br/>
+    Space: <span class="highlight">O(n · W)</span> for the full table, or <span class="highlight">O(W)</span> if only the previous row is kept (space-optimized, though then the item-selection backtrack needs extra bookkeeping).
+  </p>
+
+  <h2>When is it used?</h2>
+  <ul>
+    <li>Budget allocation with indivisible options.</li>
+    <li>Cargo loading and resource packing problems.</li>
+    <li>Project/portfolio selection under a fixed budget.</li>
+    <li>Subset-sum and partition-style problems (special cases of knapsack).</li>
+  </ul>
+
+  <h2>Compared to other approaches</h2>
+  <ul>
+    <li><span class="highlight">Greedy (value/weight ratio):</span> works for the <em>fractional</em> knapsack, but is not guaranteed optimal here since items can't be split.</li>
+    <li><span class="highlight">Brute force / recursion:</span> O(2ⁿ) — tries every subset; DP avoids recomputing overlapping subproblems.</li>
+    <li><span class="highlight">Memoization (top-down):</span> same O(n·W) complexity as tabulation, but only computes the subproblems actually reached from (n, W).</li>
+  </ul>
+</div>
+
+<!-- ══════════════════ JAVASCRIPT ══════════════════ -->
+<script>
+// ─────────────────────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────────────────────
+let weights   = [];
+let values    = [];
+let capacity  = 10;
+let n         = 0;
+let dpCells   = [];   // 2D array of { el, row, col, filled }
+let steps     = [];   // pre-computed step list
+let stepIdx   = 0;
+let autoTimer = null;
+
+// ─────────────────────────────────────────────────────────────
+//  1. GENERATE ITEMS
+// ─────────────────────────────────────────────────────────────
+function generateItems() {
+  clearTimer();
+
+  n        = 4;
+  capacity = 10;
+  weights  = [];
+  values   = [];
+
+  for (let i = 0; i < n; i++) {
+    weights.push(Math.floor(Math.random() * 5) + 2);   // 2-6
+    values.push(Math.floor(Math.random() * 16) + 5);   // 5-20
+  }
+
+  drawItemsRow();
+  buildTable();
+  steps   = computeKnapsackSteps();
+  stepIdx = 0;
+
+  document.getElementById('sortBtn').disabled  = false;
+  document.getElementById('stepBtn').disabled  = false;
+  document.getElementById('resetBtn').disabled = false;
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  setStatus(`${n} items, capacity ${capacity}. ${steps.length} steps ready.`);
+}
+
+function drawItemsRow() {
+  const row = document.getElementById('itemsRow');
+  row.innerHTML = '';
+  for (let i = 0; i < n; i++) {
+    const chip = document.createElement('div');
+    chip.className = 'item-chip';
+    chip.id = `item-${i}`;
+    chip.innerHTML = `Item ${i + 1}<span class="cap-label">w:${weights[i]} v:${values[i]}</span>`;
+    row.appendChild(chip);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+//  2. BUILD DP TABLE (DOM grid)
+// ─────────────────────────────────────────────────────────────
+function buildTable() {
+  const table = document.getElementById('dpTable');
+  table.innerHTML = '';
+  table.style.gridTemplateColumns = `44px repeat(${capacity + 1}, 30px)`;
+
+  dpCells = [];
+
+  // Header row: corner + capacity labels
+  const corner = document.createElement('div');
+  corner.className = 'cell header';
+  corner.textContent = 'i \\ w';
+  table.appendChild(corner);
+
+  for (let w = 0; w <= capacity; w++) {
+    const h = document.createElement('div');
+    h.className = 'cell header';
+    h.textContent = w;
+    table.appendChild(h);
+  }
+
+  // Rows 0..n
+  for (let i = 0; i <= n; i++) {
+    const rowLabel = document.createElement('div');
+    rowLabel.className = 'cell header';
+    rowLabel.textContent = i === 0 ? '∅' : `i${i}`;
+    table.appendChild(rowLabel);
+
+    dpCells[i] = [];
+    for (let w = 0; w <= capacity; w++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell value empty';
+      cell.id = `cell-${i}-${w}`;
+      cell.textContent = (i === 0 || w === 0) ? '0' : '';
+      table.appendChild(cell);
+      dpCells[i][w] = cell;
+    }
+  }
+
+  // Base row/col are already "filled" with 0
+  for (let w = 0; w <= capacity; w++) dpCells[0][w].classList.remove('empty');
+  for (let i = 0; i <= n; i++) dpCells[i][0].classList.remove('empty');
+}
+
+// ─────────────────────────────────────────────────────────────
+//  3. PRE-COMPUTE STEPS
+//
+//  Each step = { type, i, w, value, itemIdx }
+//  type: 'visit'    — entering cell (i,w), highlight item row (yellow)
+//        'fill'     — computed value written into cell (cyan)
+//        'unvisit'  — clear the "considering" item highlight
+//        'backtrack'— cell (i,w) is on the optimal-solution path (green)
+//        'include'  — item was actually chosen (green chip)
+//        'finish'   — algorithm complete
+// ─────────────────────────────────────────────────────────────
+function computeKnapsackSteps() {
+  const dp = Array.from({ length: n + 1 }, () => new Array(capacity + 1).fill(0));
+  const steps = [];
+
+  for (let i = 1; i <= n; i++) {
+    for (let w = 0; w <= capacity; w++) {
+      steps.push({ type: 'visit', i, w, itemIdx: i - 1 });
+
+      let val;
+      if (weights[i - 1] <= w) {
+        val = Math.max(dp[i - 1][w], values[i - 1] + dp[i - 1][w - weights[i - 1]]);
+      } else {
+        val = dp[i - 1][w];
+      }
+      dp[i][w] = val;
+
+      steps.push({ type: 'fill', i, w, value: val });
+      steps.push({ type: 'unvisit', itemIdx: i - 1 });
+    }
+  }
+
+  // Backtrack to find chosen items
+  let i = n, w = capacity;
+  const chosen = [];
+  while (i > 0 && w >= 0) {
+    steps.push({ type: 'backtrack', i, w });
+    if (dp[i][w] !== dp[i - 1][w]) {
+      chosen.push(i - 1);
+      steps.push({ type: 'include', itemIdx: i - 1 });
+      w -= weights[i - 1];
+    }
+    i--;
+  }
+
+  steps.push({ type: 'finish', total: dp[n][capacity], chosen });
+  return steps;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  4. EXECUTE ONE STEP
+// ─────────────────────────────────────────────────────────────
+function doStep() {
+  if (stepIdx >= steps.length) return;
+
+  const step = steps[stepIdx++];
+
+  if (step.type === 'visit') {
+    dpCells[step.i][step.w].classList.add('visiting');
+    document.getElementById(`item-${step.itemIdx}`).classList.add('considering');
+    setStatus(`Computing dp[${step.i}][${step.w}] for item ${step.itemIdx + 1}…`);
+
+  } else if (step.type === 'fill') {
+    const cell = dpCells[step.i][step.w];
+    cell.classList.remove('visiting', 'empty');
+    cell.textContent = step.value;
+    setStatus(`dp[${step.i}][${step.w}] = ${step.value}`);
+
+  } else if (step.type === 'unvisit') {
+    document.getElementById(`item-${step.itemIdx}`).classList.remove('considering');
+
+  } else if (step.type === 'backtrack') {
+    dpCells[step.i][step.w].classList.add('path');
+    setStatus(`Backtracking through dp[${step.i}][${step.w}]…`);
+
+  } else if (step.type === 'include') {
+    document.getElementById(`item-${step.itemIdx}`).classList.add('included');
+    setStatus(`Item ${step.itemIdx + 1} is part of the optimal solution.`);
+
+  } else if (step.type === 'finish') {
+    const items = step.chosen.map(idx => idx + 1).sort((a, b) => a - b).join(', ');
+    setStatus(`✅ Max value = ${step.total}. Items chosen: ${items || 'none'}.`);
+    clearTimer();
+    document.getElementById('sortBtn').textContent = 'Run ▶';
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+//  5. AUTO-PLAY
+// ─────────────────────────────────────────────────────────────
+function startRun() {
+  if (autoTimer) {
+    clearTimer();
+    document.getElementById('sortBtn').textContent = 'Run ▶';
+    return;
+  }
+  if (stepIdx >= steps.length) return;
+
+  document.getElementById('sortBtn').textContent = 'Pause ⏸';
+  const delay = 850 - parseInt(document.getElementById('speedSlider').value);
+
+  autoTimer = setInterval(() => {
+    if (stepIdx >= steps.length) {
+      clearTimer();
+      document.getElementById('sortBtn').textContent = 'Run ▶';
+      return;
+    }
+    doStep();
+  }, delay);
+}
+
+// ─────────────────────────────────────────────────────────────
+//  6. RESET (keeps same items, resets visuals)
+// ─────────────────────────────────────────────────────────────
+function resetRun() {
+  clearTimer();
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+
+  buildTable();
+  document.querySelectorAll('.item-chip').forEach(c => c.classList.remove('considering', 'included'));
+
+  steps   = computeKnapsackSteps();
+  stepIdx = 0;
+
+  setStatus(`Reset. ${steps.length} steps ready.`);
+}
+
+// ─────────────────────────────────────────────────────────────
+//  HELPERS
+// ─────────────────────────────────────────────────────────────
+function setStatus(msg) {
+  document.getElementById('status').textContent = msg;
+}
+
+function clearTimer() {
+  clearInterval(autoTimer);
+  autoTimer = null;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  DIVIDER DRAG
+// ─────────────────────────────────────────────────────────────
+const divider   = document.getElementById('divider');
+const leftPanel = document.querySelector('.left-panel');
+let isDragging  = false;
+
+divider.addEventListener('mousedown', () => {
+  isDragging = true;
+  document.body.style.userSelect = 'none';
+});
+document.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  const w = e.clientX;
+  if (w < 250 || w > window.innerWidth - 250) return;
+  leftPanel.style.width = w + 'px';
+});
+document.addEventListener('mouseup', () => {
+  isDragging = false;
+  document.body.style.userSelect = 'auto';
+});
+</script>
+</body>
+</html>

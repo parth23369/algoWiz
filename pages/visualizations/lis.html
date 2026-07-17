@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Longest Increasing Subsequence - DP on Subsequences</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet"/>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Orbitron',sans-serif; background:#000; color:white; display:flex; height:100vh; overflow:hidden; }
+  .left-panel { width:33%; min-width:250px; background:#111; border-right:2px solid #0ff3; padding:2rem; overflow-y:auto; }
+  .left-panel h2 { color:#0ff; margin-bottom:1.5rem; font-size:1.8rem; }
+  .tree-container { background:#1a1a1a; border:2px solid #0ff3; border-radius:10px; height:260px; margin-bottom:1rem; overflow:auto; padding:12px; }
+  .row-label { font-size:0.65rem; color:#0ff8; margin-bottom:4px; }
+  .array-row { display:flex; gap:4px; margin-bottom:16px; }
+  .cell { min-width:34px; height:34px; display:flex; align-items:center; justify-content:center; font-size:0.7rem; border-radius:6px; background:#0ff1; border:2px solid #0ff; color:#0ff; transition:all 0.3s ease; flex-direction:column; position:relative; }
+  .cell.empty { background:transparent; border-color:#0ff2; color:#0ff5; }
+  .cell.visiting-i { border-color:gold; background:#ffd7001a; color:gold; }
+  .cell.visiting-j { border-color:#f0f; background:#ff00ff1a; color:#f0f; }
+  .cell.path { border-color:#0f0; background:#00ff001a; color:#0f0; }
+  .idx { font-size:0.5rem; color:#0ff8; }
+  .controls { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:1rem; }
+  .btn { background:#0ff3; padding:0.6rem 1rem; border:none; border-radius:8px; cursor:pointer; color:black; font-family:'Orbitron',sans-serif; font-size:0.8rem; transition:background 0.3s; }
+  .btn:hover { background:#0ff; }
+  .btn:disabled { opacity:0.3; cursor:not-allowed; }
+  .speed-row { display:flex; align-items:center; gap:8px; margin-bottom:1.2rem; font-size:0.75rem; color:#0ff; }
+  input[type=range] { flex:1; accent-color:#0ff; }
+  #status { font-size:0.75rem; color:#0ff; min-height:1.2rem; margin-bottom:1rem; text-align:center; }
+  .code-block h3 { color:#0ff; margin-bottom:0.5rem; font-size:1.2rem; }
+  pre { background:#000; padding:1rem; border-radius:8px; border:1px solid #0ff3; color:#0ff; overflow-x:auto; font-size:0.8rem; line-height:1.4rem; }
+  #divider { width:6px; background:#0ff3; cursor:col-resize; flex-shrink:0; }
+  #divider:hover { background:#0ff; }
+  .right-panel { flex:1; min-width:250px; padding:2rem; overflow-y:auto; }
+  .right-panel h1 { color:#0ff; font-size:2rem; margin-bottom:1rem; }
+  .right-panel p { font-size:1rem; color:#ccc; line-height:1.7; margin-bottom:1.2rem; }
+  .right-panel h2 { color:#0ff; font-size:1.3rem; margin:1.5rem 0 0.5rem; }
+  .right-panel ul { margin-left:1.2rem; color:#ccc; line-height:1.8; }
+  .highlight { color:#0ff; font-weight:bold; }
+  .legend { display:flex; gap:1.5rem; flex-wrap:wrap; margin-bottom:1.5rem; font-size:0.75rem; color:#ccc; }
+  .legend-item { display:flex; align-items:center; gap:6px; }
+  .legend-dot { width:14px; height:14px; border-radius:4px; border:2px solid; }
+</style>
+</head>
+<body>
+
+<div class="left-panel">
+  <h2>Longest Increasing Subsequence</h2>
+
+  <div class="tree-container" id="treeContainer">
+    <div class="row-label">nums[i]</div>
+    <div class="array-row" id="numsRow"></div>
+    <div class="row-label">dp[i] = longest increasing run ending at i</div>
+    <div class="array-row" id="dpRow"></div>
+  </div>
+
+  <div id="status">Press "New Array" to start</div>
+
+  <div class="controls">
+    <button class="btn" id="newBtn"   onclick="generateArray()">New Array</button>
+    <button class="btn" id="sortBtn"  onclick="startRun()" disabled>Run ▶</button>
+    <button class="btn" id="stepBtn"  onclick="doStep()"    disabled>Step</button>
+    <button class="btn" id="resetBtn" onclick="resetRun()"  disabled>Reset</button>
+  </div>
+
+  <div class="speed-row">
+    <span>Slow</span>
+    <input type="range" id="speedSlider" min="50" max="800" value="150" step="25"/>
+    <span>Fast</span>
+  </div>
+
+  <div class="code-block">
+    <h3>DP on Subsequences Code</h3>
+    <pre><code>function lengthOfLIS(nums) {
+  const n = nums.length;
+  const dp = new Array(n).fill(1);   // each element is a subsequence of 1
+
+  for (let i = 1; i < n; i++) {
+    for (let j = 0; j < i; j++) {
+      if (nums[j] < nums[i]) {
+        dp[i] = Math.max(dp[i], dp[j] + 1);
+      }
+    }
+  }
+
+  return Math.max(...dp);
+}</code></pre>
+  </div>
+</div>
+
+<div id="divider"></div>
+
+<div class="right-panel">
+  <h1>How Longest Increasing Subsequence Works</h1>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="border-color:gold"></div>Current index i</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#f0f"></div>Comparing against j &lt; i</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#0f0"></div>Part of the LIS</div>
+  </div>
+
+  <p>
+    LIS asks for the longest run of elements — not necessarily adjacent — that strictly increases. Unlike LCS, there's only one array here, but the state at index i depends on comparing it against every earlier index, which is what makes this a "DP on subsequences" pattern rather than plain 1D DP.
+  </p>
+
+  <h2>Step by step</h2>
+  <ul>
+    <li>Define <span class="highlight">dp[i]</span> as the length of the longest increasing subsequence ending exactly at index i.</li>
+    <li>Every element starts with <span class="highlight">dp[i] = 1</span> (itself, alone).</li>
+    <li>For each i, look back at every <span class="highlight">j &lt; i</span>: if <code>nums[j] &lt; nums[i]</code>, index i could extend the subsequence ending at j.</li>
+    <li>Take <span class="highlight">dp[i] = max(dp[i], dp[j] + 1)</span> across all valid j, and remember which j gave the best extension (a parent pointer).</li>
+    <li>The answer is the maximum value anywhere in dp[]; <span class="highlight">backtrack</span> through parent pointers from that index to recover the actual subsequence.</li>
+  </ul>
+
+  <h2>Recurrence</h2>
+  <p>
+    dp[i] = max( dp[i], dp[j] + 1 ) for every j &lt; i where nums[j] &lt; nums[i]; answer = max(dp).
+  </p>
+
+  <h2>Complexity</h2>
+  <p>
+    Time: <span class="highlight">O(n²)</span> for this tabulation approach (every pair i, j).<br/>
+    Space: <span class="highlight">O(n)</span> for the dp array.<br/>
+    A patience-sorting + binary search variant brings time down to <span class="highlight">O(n log n)</span>, at the cost of a less direct backtrack.
+  </p>
+
+  <h2>When is it used?</h2>
+  <ul>
+    <li>Box-stacking and envelope-nesting problems.</li>
+    <li>Patience sort and card-game solitaire strategy.</li>
+    <li>Finding longest chains in scheduling or version/dependency graphs.</li>
+  </ul>
+
+  <h2>Compared to other DP shapes</h2>
+  <ul>
+    <li><span class="highlight">DP on subsequences (this):</span> one array, but each state compares against all previous states — O(n²) pairs.</li>
+    <li><span class="highlight">1D DP (House Robber):</span> each state only depends on a fixed constant number of previous states — O(n) total.</li>
+    <li><span class="highlight">DP on strings (LCS):</span> two independent indices over two different sequences, forming a 2D grid.</li>
+  </ul>
+</div>
+
+<script>
+let nums = [];
+let n = 0;
+let numCells = [], dpCells = [];
+let steps = [], stepIdx = 0, autoTimer = null;
+
+function generateArray() {
+  clearTimer();
+  n = 8;
+  nums = Array.from({length:n}, () => Math.floor(Math.random()*50)+1);
+  drawRows();
+  steps = computeSteps();
+  stepIdx = 0;
+  document.getElementById('sortBtn').disabled = false;
+  document.getElementById('stepBtn').disabled = false;
+  document.getElementById('resetBtn').disabled = false;
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  setStatus(`${n} numbers generated. ${steps.length} steps.`);
+}
+
+function drawRows() {
+  const nRow = document.getElementById('numsRow');
+  const dRow = document.getElementById('dpRow');
+  nRow.innerHTML = ''; dRow.innerHTML = '';
+  numCells = []; dpCells = [];
+
+  nums.forEach((v, idx) => {
+    const c = document.createElement('div');
+    c.className = 'cell';
+    c.innerHTML = `${v}<span class="idx">i${idx}</span>`;
+    nRow.appendChild(c);
+    numCells.push(c);
+  });
+
+  for (let i = 0; i < n; i++) {
+    const c = document.createElement('div');
+    c.className = 'cell';
+    c.innerHTML = `1<span class="idx">dp${i}</span>`;
+    dRow.appendChild(c);
+    dpCells.push(c);
+  }
+}
+
+function computeSteps() {
+  const dp = new Array(n).fill(1);
+  const parent = new Array(n).fill(-1);
+  const steps = [];
+
+  for (let i = 1; i < n; i++) {
+    for (let j = 0; j < i; j++) {
+      steps.push({type:'compare', i, j});
+      if (nums[j] < nums[i] && dp[j] + 1 > dp[i]) {
+        dp[i] = dp[j] + 1;
+        parent[i] = j;
+        steps.push({type:'update', i, value: dp[i]});
+      }
+    }
+    steps.push({type:'donei', i});
+  }
+
+  let best = 0;
+  for (let i = 1; i < n; i++) if (dp[i] > dp[best]) best = i;
+
+  const chain = [];
+  let cur = best;
+  while (cur !== -1) { chain.push(cur); cur = parent[cur]; }
+  chain.reverse();
+
+  steps.push({type:'finish', length: dp[best], chain, values: chain.map(i => nums[i])});
+  return steps;
+}
+
+function doStep() {
+  if (stepIdx >= steps.length) return;
+  const s = steps[stepIdx++];
+  if (s.type === 'compare') {
+    numCells.forEach(c => c.classList.remove('visiting-i','visiting-j'));
+    numCells[s.i].classList.add('visiting-i');
+    numCells[s.j].classList.add('visiting-j');
+    setStatus(`i=${s.i} (${nums[s.i]}) vs j=${s.j} (${nums[s.j]})…`);
+  } else if (s.type === 'update') {
+    dpCells[s.i].innerHTML = `${s.value}<span class="idx">dp${s.i}</span>`;
+    setStatus(`dp[${s.i}] improved to ${s.value}`);
+  } else if (s.type === 'donei') {
+    numCells.forEach(c => c.classList.remove('visiting-i','visiting-j'));
+  } else if (s.type === 'finish') {
+    s.chain.forEach(idx => { numCells[idx].classList.add('path'); dpCells[idx].classList.add('path'); });
+    setStatus(`✅ LIS length = ${s.length}. Sequence: ${s.values.join(', ')}.`);
+    clearTimer();
+    document.getElementById('sortBtn').textContent = 'Run ▶';
+  }
+}
+
+function startRun() {
+  if (autoTimer) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+  if (stepIdx >= steps.length) return;
+  document.getElementById('sortBtn').textContent = 'Pause ⏸';
+  const delay = 850 - parseInt(document.getElementById('speedSlider').value);
+  autoTimer = setInterval(() => {
+    if (stepIdx >= steps.length) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+    doStep();
+  }, delay);
+}
+
+function resetRun() {
+  clearTimer();
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  drawRows();
+  steps = computeSteps();
+  stepIdx = 0;
+  setStatus(`Reset. ${steps.length} steps.`);
+}
+
+function setStatus(msg) { document.getElementById('status').textContent = msg; }
+function clearTimer() { clearInterval(autoTimer); autoTimer = null; }
+
+const divider = document.getElementById('divider');
+const leftPanel = document.querySelector('.left-panel');
+let isDragging = false;
+divider.addEventListener('mousedown', () => { isDragging = true; document.body.style.userSelect = 'none'; });
+document.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  const w = e.clientX;
+  if (w < 250 || w > window.innerWidth - 250) return;
+  leftPanel.style.width = w + 'px';
+});
+document.addEventListener('mouseup', () => { isDragging = false; document.body.style.userSelect = 'auto'; });
+</script>
+</body>
+</html>

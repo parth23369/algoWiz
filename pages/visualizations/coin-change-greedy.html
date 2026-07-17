@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Coin Change - Greedy</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet"/>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Orbitron',sans-serif; background:#000; color:white; display:flex; height:100vh; overflow:hidden; }
+  .left-panel { width:33%; min-width:250px; background:#111; border-right:2px solid #0ff3; padding:2rem; overflow-y:auto; }
+  .left-panel h2 { color:#0ff; margin-bottom:1rem; font-size:1.8rem; }
+  .mode-row { display:flex; gap:6px; margin-bottom:1rem; }
+  .mode-btn { flex:1; background:#0ff1; border:2px solid #0ff3; border-radius:8px; padding:0.5rem; font-size:0.65rem; color:#0ff; cursor:pointer; font-family:'Orbitron',sans-serif; }
+  .mode-btn.active { background:#0ff3; color:black; }
+  .tree-container { background:#1a1a1a; border:2px solid #0ff3; border-radius:10px; height:260px; margin-bottom:1rem; overflow:auto; padding:12px; }
+  .row-label { font-size:0.65rem; color:#0ff8; margin-bottom:6px; }
+  .coins-row { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
+  .coin { border:2px solid #0ff; border-radius:50%; width:44px; height:44px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:0.65rem; color:#0ff; background:#0ff1; transition:all 0.3s ease; }
+  .coin.considering { border-color:gold; color:gold; background:#ffd7001a; }
+  .coin.used { border-color:#0f0; color:#0f0; background:#00ff001a; }
+  .amount-box { border:2px solid #0ff3; border-radius:8px; padding:0.6rem; font-size:0.8rem; color:#0ff; text-align:center; }
+  .picks-row { display:flex; gap:4px; flex-wrap:wrap; margin-top:10px; }
+  .pick-chip { border:2px solid #0f0; color:#0f0; border-radius:6px; padding:2px 6px; font-size:0.65rem; }
+  .controls { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:1rem; }
+  .btn { background:#0ff3; padding:0.6rem 1rem; border:none; border-radius:8px; cursor:pointer; color:black; font-family:'Orbitron',sans-serif; font-size:0.8rem; transition:background 0.3s; }
+  .btn:hover { background:#0ff; }
+  .btn:disabled { opacity:0.3; cursor:not-allowed; }
+  .speed-row { display:flex; align-items:center; gap:8px; margin-bottom:1.2rem; font-size:0.75rem; color:#0ff; }
+  input[type=range] { flex:1; accent-color:#0ff; }
+  #status { font-size:0.75rem; color:#0ff; min-height:1.2rem; margin-bottom:1rem; text-align:center; }
+  .code-block h3 { color:#0ff; margin-bottom:0.5rem; font-size:1.2rem; }
+  pre { background:#000; padding:1rem; border-radius:8px; border:1px solid #0ff3; color:#0ff; overflow-x:auto; font-size:0.8rem; line-height:1.4rem; }
+  #divider { width:6px; background:#0ff3; cursor:col-resize; flex-shrink:0; }
+  #divider:hover { background:#0ff; }
+  .right-panel { flex:1; min-width:250px; padding:2rem; overflow-y:auto; }
+  .right-panel h1 { color:#0ff; font-size:2rem; margin-bottom:1rem; }
+  .right-panel p { font-size:1rem; color:#ccc; line-height:1.7; margin-bottom:1.2rem; }
+  .right-panel h2 { color:#0ff; font-size:1.3rem; margin:1.5rem 0 0.5rem; }
+  .right-panel ul { margin-left:1.2rem; color:#ccc; line-height:1.8; }
+  .highlight { color:#0ff; font-weight:bold; }
+  .warn { color:#e24b4a; font-weight:bold; }
+  .legend { display:flex; gap:1.5rem; flex-wrap:wrap; margin-bottom:1.5rem; font-size:0.75rem; color:#ccc; }
+  .legend-item { display:flex; align-items:center; gap:6px; }
+  .legend-dot { width:14px; height:14px; border-radius:50%; border:2px solid; }
+</style>
+</head>
+<body>
+
+<div class="left-panel">
+  <h2>Coin Change (Greedy)</h2>
+
+  <div class="mode-row">
+    <button class="mode-btn active" id="canonicalBtn" onclick="setMode('canonical')">Canonical coins</button>
+    <button class="mode-btn" id="failBtn" onclick="setMode('fail')">Coins where greedy fails</button>
+  </div>
+
+  <div class="tree-container" id="treeContainer">
+    <div class="row-label">Available coins (largest first)</div>
+    <div class="coins-row" id="coinsRow"></div>
+    <div class="amount-box" id="amountBox">Press "New Amount" to start</div>
+    <div class="picks-row" id="picksRow"></div>
+  </div>
+
+  <div id="status"></div>
+
+  <div class="controls">
+    <button class="btn" id="newBtn"   onclick="generateAmount()">New Amount</button>
+    <button class="btn" id="sortBtn"  onclick="startRun()" disabled>Run ▶</button>
+    <button class="btn" id="stepBtn"  onclick="doStep()"    disabled>Step</button>
+    <button class="btn" id="resetBtn" onclick="resetRun()"  disabled>Reset</button>
+  </div>
+
+  <div class="speed-row">
+    <span>Slow</span>
+    <input type="range" id="speedSlider" min="100" max="1000" value="500" step="50"/>
+    <span>Fast</span>
+  </div>
+
+  <div class="code-block">
+    <h3>Greedy Code</h3>
+    <pre><code>function greedyCoinChange(coins, amount) {
+  // Greedy: always use the largest coin that fits
+  coins.sort((a, b) => b - a);
+
+  const used = [];
+  let remaining = amount;
+
+  for (const coin of coins) {
+    while (coin <= remaining) {
+      used.push(coin);
+      remaining -= coin;
+    }
+  }
+
+  // remaining === 0 only if a solution using these coins exists
+  return remaining === 0 ? used : null;
+}</code></pre>
+  </div>
+</div>
+
+<div id="divider"></div>
+
+<div class="right-panel">
+  <h1>How Greedy Coin Change Works (and When It Breaks)</h1>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="border-color:gold"></div>Coin being tried</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#0f0"></div>Coin used</div>
+  </div>
+
+  <p>
+    The idea is simple: always hand over the largest coin that doesn't overshoot the remaining amount. For everyday currency systems (like 1, 5, 10, 25) this greedy approach happens to give the fewest coins possible — but it isn't guaranteed to work for <em>every</em> set of denominations, which makes this a great case study in greedy's limits.
+  </p>
+
+  <h2>Step by step</h2>
+  <ul>
+    <li>Sort the coins largest to smallest.</li>
+    <li>Repeatedly take the <span class="highlight">largest coin</span> that's still ≤ the remaining amount.</li>
+    <li>Subtract it from the remaining amount and record the pick (green).</li>
+    <li>Continue until the remaining amount hits exactly 0 (success), or no coin fits anymore while remaining &gt; 0 (greedy has failed to find a solution, even if one exists).</li>
+  </ul>
+
+  <h2>Where greedy silently breaks</h2>
+  <p>
+    With coins <span class="highlight">{1, 3, 4}</span> and amount <span class="highlight">6</span>, greedy picks 4, then 1, then 1 — three coins. But <span class="warn">3 + 3</span> only needs two. Greedy isn't wrong about being fast, it's wrong about being optimal: it commits to the biggest coin immediately and never reconsiders, so it can't see that giving up a bit of "greed" now pays off later. Toggle the mode above to see this play out step by step.
+  </p>
+
+  <h2>Complexity</h2>
+  <p>
+    Time: <span class="highlight">O(n log n + amount/smallest coin)</span> — sort once, then a bounded number of coin picks.<br/>
+    Space: <span class="highlight">O(1)</span> beyond the output list.
+  </p>
+
+  <h2>When is it safe to use?</h2>
+  <ul>
+    <li>"Canonical" coin systems (like most real-world currencies) where greedy is provably optimal.</li>
+    <li>Making change quickly when you already know the coin system is canonical.</li>
+  </ul>
+
+  <h2>Compared to Dynamic Programming</h2>
+  <ul>
+    <li><span class="highlight">Greedy (this):</span> very fast, but only correct for specific ("canonical") coin sets — and it won't warn you when it's wrong.</li>
+    <li><span class="highlight">DP (Coin Change, LeetCode 322):</span> O(amount · n) time, always correct for any coin set — builds up <code>dp[amount] = min coins for exactly that amount</code> by trying every coin at every amount, rather than committing greedily.</li>
+  </ul>
+</div>
+
+<script>
+let mode = 'canonical';
+let coins = [];
+let amount = 0;
+let coinEls = [];
+let steps = [], stepIdx = 0, autoTimer = null;
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('canonicalBtn').classList.toggle('active', m === 'canonical');
+  document.getElementById('failBtn').classList.toggle('active', m === 'fail');
+  generateAmount();
+}
+
+function generateAmount() {
+  clearTimer();
+  coins = mode === 'canonical' ? [25, 10, 5, 1] : [4, 3, 1];
+  amount = mode === 'canonical'
+    ? Math.floor(Math.random()*90)+10
+    : 6; // classic failing case for {1,3,4}
+
+  drawCoins();
+  document.getElementById('picksRow').innerHTML = '';
+  document.getElementById('amountBox').textContent = `Amount to make: ${amount}`;
+
+  steps = computeSteps();
+  stepIdx = 0;
+  document.getElementById('sortBtn').disabled = false;
+  document.getElementById('stepBtn').disabled = false;
+  document.getElementById('resetBtn').disabled = false;
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  setStatus(`Coins: {${coins.join(', ')}}. ${steps.length} steps.`);
+}
+
+function drawCoins() {
+  const row = document.getElementById('coinsRow');
+  row.innerHTML = '';
+  coinEls = {};
+  coins.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'coin';
+    div.textContent = c;
+    row.appendChild(div);
+    coinEls[c] = div;
+  });
+}
+
+function computeSteps() {
+  const steps = [];
+  let remaining = amount;
+  const used = [];
+
+  for (const coin of coins) {
+    steps.push({type:'consider', coin});
+    let count = 0;
+    while (coin <= remaining) {
+      remaining -= coin;
+      used.push(coin);
+      count++;
+      steps.push({type:'use', coin, remaining, count});
+    }
+    steps.push({type:'doneCoin', coin});
+  }
+
+  steps.push({type:'finish', remaining, used, optimalNote: mode === 'fail'});
+  return steps;
+}
+
+function doStep() {
+  if (stepIdx >= steps.length) return;
+  const s = steps[stepIdx++];
+
+  if (s.type === 'consider') {
+    coinEls[s.coin].classList.add('considering');
+    setStatus(`Trying coin ${s.coin}…`);
+  } else if (s.type === 'use') {
+    const chip = document.createElement('div');
+    chip.className = 'pick-chip';
+    chip.textContent = s.coin;
+    document.getElementById('picksRow').appendChild(chip);
+    document.getElementById('amountBox').textContent = `Remaining: ${s.remaining}`;
+    setStatus(`Used coin ${s.coin} (x${s.count} so far this denomination). Remaining = ${s.remaining}`);
+  } else if (s.type === 'doneCoin') {
+    coinEls[s.coin].classList.remove('considering');
+    coinEls[s.coin].classList.add('used');
+  } else if (s.type === 'finish') {
+    if (s.remaining === 0) {
+      setStatus(`✅ Done — used ${s.used.length} coins: [${s.used.join(', ')}]` +
+        (s.optimalNote ? ' — but this is NOT the fewest possible! Compare to {3,3}.' : ''));
+    } else {
+      setStatus(`❌ Greedy got stuck with ${s.remaining} left over — no combination found this way.`);
+    }
+    clearTimer();
+    document.getElementById('sortBtn').textContent = 'Run ▶';
+  }
+}
+
+function startRun() {
+  if (autoTimer) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+  if (stepIdx >= steps.length) return;
+  document.getElementById('sortBtn').textContent = 'Pause ⏸';
+  const delay = 1100 - parseInt(document.getElementById('speedSlider').value);
+  autoTimer = setInterval(() => {
+    if (stepIdx >= steps.length) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+    doStep();
+  }, delay);
+}
+
+function resetRun() {
+  clearTimer();
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  drawCoins();
+  document.getElementById('picksRow').innerHTML = '';
+  document.getElementById('amountBox').textContent = `Amount to make: ${amount}`;
+  steps = computeSteps();
+  stepIdx = 0;
+  setStatus(`Reset. ${steps.length} steps.`);
+}
+
+function setStatus(msg) { document.getElementById('status').textContent = msg; }
+function clearTimer() { clearInterval(autoTimer); autoTimer = null; }
+
+const divider = document.getElementById('divider');
+const leftPanel = document.querySelector('.left-panel');
+let isDragging = false;
+divider.addEventListener('mousedown', () => { isDragging = true; document.body.style.userSelect = 'none'; });
+document.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  const w = e.clientX;
+  if (w < 250 || w > window.innerWidth - 250) return;
+  leftPanel.style.width = w + 'px';
+});
+document.addEventListener('mouseup', () => { isDragging = false; document.body.style.userSelect = 'auto'; });
+</script>
+</body>
+</html>

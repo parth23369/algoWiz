@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Buy and Sell Stocks - State Machine DP</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet"/>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Orbitron',sans-serif; background:#000; color:white; display:flex; height:100vh; overflow:hidden; }
+  .left-panel { width:33%; min-width:250px; background:#111; border-right:2px solid #0ff3; padding:2rem; overflow-y:auto; }
+  .left-panel h2 { color:#0ff; margin-bottom:1.5rem; font-size:1.8rem; }
+  .tree-container { background:#1a1a1a; border:2px solid #0ff3; border-radius:10px; height:280px; margin-bottom:1rem; overflow:auto; padding:12px; }
+  .row-label { font-size:0.65rem; color:#0ff8; margin-bottom:4px; }
+  .array-row { display:flex; gap:4px; margin-bottom:14px; }
+  .cell { min-width:36px; height:34px; display:flex; align-items:center; justify-content:center; font-size:0.7rem; border-radius:6px; background:#0ff1; border:2px solid #0ff; color:#0ff; transition:all 0.3s ease; flex-direction:column; }
+  .cell.empty { background:transparent; border-color:#0ff2; color:#0ff5; }
+  .cell.today { border-color:gold; background:#ffd7001a; color:gold; }
+  .cell.sold { border-color:#0f0; background:#00ff001a; color:#0f0; }
+  .cell.bought { border-color:#f0f; background:#ff00ff1a; color:#f0f; }
+  .idx { font-size:0.5rem; color:#0ff8; }
+  .controls { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:1rem; }
+  .btn { background:#0ff3; padding:0.6rem 1rem; border:none; border-radius:8px; cursor:pointer; color:black; font-family:'Orbitron',sans-serif; font-size:0.8rem; transition:background 0.3s; }
+  .btn:hover { background:#0ff; }
+  .btn:disabled { opacity:0.3; cursor:not-allowed; }
+  .speed-row { display:flex; align-items:center; gap:8px; margin-bottom:1.2rem; font-size:0.75rem; color:#0ff; }
+  input[type=range] { flex:1; accent-color:#0ff; }
+  #status { font-size:0.75rem; color:#0ff; min-height:1.2rem; margin-bottom:1rem; text-align:center; }
+  .code-block h3 { color:#0ff; margin-bottom:0.5rem; font-size:1.2rem; }
+  pre { background:#000; padding:1rem; border-radius:8px; border:1px solid #0ff3; color:#0ff; overflow-x:auto; font-size:0.8rem; line-height:1.4rem; }
+  #divider { width:6px; background:#0ff3; cursor:col-resize; flex-shrink:0; }
+  #divider:hover { background:#0ff; }
+  .right-panel { flex:1; min-width:250px; padding:2rem; overflow-y:auto; }
+  .right-panel h1 { color:#0ff; font-size:2rem; margin-bottom:1rem; }
+  .right-panel p { font-size:1rem; color:#ccc; line-height:1.7; margin-bottom:1.2rem; }
+  .right-panel h2 { color:#0ff; font-size:1.3rem; margin:1.5rem 0 0.5rem; }
+  .right-panel ul { margin-left:1.2rem; color:#ccc; line-height:1.8; }
+  .highlight { color:#0ff; font-weight:bold; }
+  .legend { display:flex; gap:1.5rem; flex-wrap:wrap; margin-bottom:1.5rem; font-size:0.75rem; color:#ccc; }
+  .legend-item { display:flex; align-items:center; gap:6px; }
+  .legend-dot { width:14px; height:14px; border-radius:4px; border:2px solid; }
+</style>
+</head>
+<body>
+
+<div class="left-panel">
+  <h2>Buy &amp; Sell Stocks (State Machine)</h2>
+
+  <div class="tree-container" id="treeContainer">
+    <div class="row-label">price[i]</div>
+    <div class="array-row" id="priceRow"></div>
+    <div class="row-label">cash[i] = max profit, holding no stock</div>
+    <div class="array-row" id="cashRow"></div>
+    <div class="row-label">hold[i] = max profit, currently holding stock</div>
+    <div class="array-row" id="holdRow"></div>
+  </div>
+
+  <div id="status">Press "New Prices" to start</div>
+
+  <div class="controls">
+    <button class="btn" id="newBtn"   onclick="generatePrices()">New Prices</button>
+    <button class="btn" id="sortBtn"  onclick="startRun()" disabled>Run ▶</button>
+    <button class="btn" id="stepBtn"  onclick="doStep()"    disabled>Step</button>
+    <button class="btn" id="resetBtn" onclick="resetRun()"  disabled>Reset</button>
+  </div>
+
+  <div class="speed-row">
+    <span>Slow</span>
+    <input type="range" id="speedSlider" min="50" max="800" value="250" step="25"/>
+    <span>Fast</span>
+  </div>
+
+  <div class="code-block">
+    <h3>State Machine DP Code</h3>
+    <pre><code>function maxProfit(prices) {
+  const n = prices.length;
+  let cash = 0;          // not holding a stock
+  let hold = -prices[0]; // holding a stock
+
+  for (let i = 1; i < n; i++) {
+    const prevCash = cash;
+    // sell today, or stay in cash
+    cash = Math.max(cash, hold + prices[i]);
+    // buy today, or keep holding
+    hold = Math.max(hold, prevCash - prices[i]);
+  }
+
+  return cash;  // best to end without holding
+}</code></pre>
+  </div>
+</div>
+
+<div id="divider"></div>
+
+<div class="right-panel">
+  <h1>How Buy &amp; Sell Stocks Works</h1>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="border-color:gold"></div>Today (i)</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#0f0"></div>Sold today (cash increased)</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#f0f"></div>Bought today (hold improved)</div>
+  </div>
+
+  <p>
+    With unlimited transactions allowed (buy, sell, buy again, as many times as you like — one share at a time), the greedy "buy every local dip, sell every local peak" idea actually works, but the DP version generalizes cleanly to variants with fees or cooldowns. It's a <span class="highlight">state machine DP</span>: on any day you're in exactly one of two states — holding a stock, or not.
+  </p>
+
+  <h2>Step by step</h2>
+  <ul>
+    <li>Track two rolling values per day: <span class="highlight">cash[i]</span> (best profit if you own no stock) and <span class="highlight">hold[i]</span> (best profit if you're currently holding one).</li>
+    <li>Base case: <code>cash[0] = 0</code>, <code>hold[0] = -price[0]</code> (buying on day 0 costs its price).</li>
+    <li>Each day, <span class="highlight">cash[i]</span> is either yesterday's cash (do nothing) or selling today: <code>hold[i-1] + price[i]</code>.</li>
+    <li><span class="highlight">hold[i]</span> is either yesterday's hold (do nothing) or buying today: <code>cash[i-1] - price[i]</code>.</li>
+    <li>The answer is <span class="highlight">cash[n-1]</span> — you should never end holding a stock you haven't sold.</li>
+  </ul>
+
+  <h2>Recurrence</h2>
+  <p>
+    cash[i] = max( cash[i-1], hold[i-1] + price[i] )<br/>
+    hold[i] = max( hold[i-1], cash[i-1] - price[i] )
+  </p>
+
+  <h2>Complexity</h2>
+  <p>
+    Time: <span class="highlight">O(n)</span> — one pass, two O(1) updates per day.<br/>
+    Space: <span class="highlight">O(1)</span> if you only keep yesterday's cash and hold (as shown), or O(n) if you keep the full history for visualization/backtracking.
+  </p>
+
+  <h2>When is it used?</h2>
+  <ul>
+    <li>Any repeated buy/sell trading simulation.</li>
+    <li>Variants add a transaction fee, a cooldown day after selling, or a cap on the number of transactions — each just adds more states to the machine.</li>
+    <li>General template for "which state am I in today" DP problems (e.g. game-turn DP).</li>
+  </ul>
+
+  <h2>Compared to other DP shapes</h2>
+  <ul>
+    <li><span class="highlight">State machine DP (this):</span> a small fixed set of states per step, transitions between them — O(n · states).</li>
+    <li><span class="highlight">1D DP (House Robber):</span> single state per index, no branching between multiple "modes."</li>
+    <li><span class="highlight">Greedy:</span> for the unlimited-transaction case, simply summing every positive day-to-day price increase gives the same answer with O(1) space — but this stops working once fees or transaction limits are added, which is exactly where the DP formulation pays off.</li>
+  </ul>
+</div>
+
+<script>
+let prices = [];
+let n = 0;
+let priceCells = [], cashCells = [], holdCells = [];
+let steps = [], stepIdx = 0, autoTimer = null;
+
+function generatePrices() {
+  clearTimer();
+  n = 8;
+  prices = Array.from({length:n}, () => Math.floor(Math.random()*80)+20);
+  drawRows();
+  steps = computeSteps();
+  stepIdx = 0;
+  document.getElementById('sortBtn').disabled = false;
+  document.getElementById('stepBtn').disabled = false;
+  document.getElementById('resetBtn').disabled = false;
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  setStatus(`${n} days of prices generated. ${steps.length} steps.`);
+}
+
+function drawRows() {
+  const pRow = document.getElementById('priceRow');
+  const cRow = document.getElementById('cashRow');
+  const hRow = document.getElementById('holdRow');
+  pRow.innerHTML = ''; cRow.innerHTML = ''; hRow.innerHTML = '';
+  priceCells = []; cashCells = []; holdCells = [];
+
+  prices.forEach((v, idx) => {
+    const c = document.createElement('div');
+    c.className = 'cell';
+    c.innerHTML = `${v}<span class="idx">d${idx}</span>`;
+    pRow.appendChild(c);
+    priceCells.push(c);
+  });
+
+  for (let i = 0; i < n; i++) {
+    const c1 = document.createElement('div');
+    c1.className = 'cell empty';
+    c1.innerHTML = `<span class="idx">d${i}</span>`;
+    cRow.appendChild(c1);
+    cashCells.push(c1);
+
+    const c2 = document.createElement('div');
+    c2.className = 'cell empty';
+    c2.innerHTML = `<span class="idx">d${i}</span>`;
+    hRow.appendChild(c2);
+    holdCells.push(c2);
+  }
+}
+
+function computeSteps() {
+  const cash = new Array(n).fill(0);
+  const hold = new Array(n).fill(0);
+  cash[0] = 0;
+  hold[0] = -prices[0];
+  const steps = [];
+  steps.push({type:'base', cash: cash[0], hold: hold[0]});
+
+  for (let i = 1; i < n; i++) {
+    steps.push({type:'visit', i});
+    const prevCash = cash[i-1];
+    const sellOption = hold[i-1] + prices[i];
+    cash[i] = Math.max(cash[i-1], sellOption);
+    const sold = cash[i] === sellOption && sellOption > cash[i-1];
+    steps.push({type:'cash', i, value: cash[i], sold});
+
+    const buyOption = prevCash - prices[i];
+    hold[i] = Math.max(hold[i-1], buyOption);
+    const bought = hold[i] === buyOption && buyOption > hold[i-1];
+    steps.push({type:'hold', i, value: hold[i], bought});
+  }
+
+  steps.push({type:'finish', total: cash[n-1]});
+  return steps;
+}
+
+function doStep() {
+  if (stepIdx >= steps.length) return;
+  const s = steps[stepIdx++];
+  if (s.type === 'base') {
+    cashCells[0].classList.remove('empty');
+    cashCells[0].innerHTML = `${s.cash}<span class="idx">d0</span>`;
+    holdCells[0].classList.remove('empty');
+    holdCells[0].innerHTML = `${s.hold}<span class="idx">d0</span>`;
+    setStatus(`Base case: cash[0]=${s.cash}, hold[0]=${s.hold}`);
+  } else if (s.type === 'visit') {
+    priceCells.forEach(c => c.classList.remove('today'));
+    priceCells[s.i].classList.add('today');
+    setStatus(`Day ${s.i}: price = ${prices[s.i]}`);
+  } else if (s.type === 'cash') {
+    const c = cashCells[s.i];
+    c.classList.remove('empty');
+    c.innerHTML = `${s.value}<span class="idx">d${s.i}</span>`;
+    if (s.sold) c.classList.add('sold');
+    setStatus(`cash[${s.i}] = ${s.value}${s.sold ? ' (sold today)' : ''}`);
+  } else if (s.type === 'hold') {
+    const c = holdCells[s.i];
+    c.classList.remove('empty');
+    c.innerHTML = `${s.value}<span class="idx">d${s.i}</span>`;
+    if (s.bought) c.classList.add('bought');
+    setStatus(`hold[${s.i}] = ${s.value}${s.bought ? ' (bought today)' : ''}`);
+  } else if (s.type === 'finish') {
+    priceCells.forEach(c => c.classList.remove('today'));
+    setStatus(`✅ Max profit = ${s.total}.`);
+    clearTimer();
+    document.getElementById('sortBtn').textContent = 'Run ▶';
+  }
+}
+
+function startRun() {
+  if (autoTimer) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+  if (stepIdx >= steps.length) return;
+  document.getElementById('sortBtn').textContent = 'Pause ⏸';
+  const delay = 850 - parseInt(document.getElementById('speedSlider').value);
+  autoTimer = setInterval(() => {
+    if (stepIdx >= steps.length) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+    doStep();
+  }, delay);
+}
+
+function resetRun() {
+  clearTimer();
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  drawRows();
+  steps = computeSteps();
+  stepIdx = 0;
+  setStatus(`Reset. ${steps.length} steps.`);
+}
+
+function setStatus(msg) { document.getElementById('status').textContent = msg; }
+function clearTimer() { clearInterval(autoTimer); autoTimer = null; }
+
+const divider = document.getElementById('divider');
+const leftPanel = document.querySelector('.left-panel');
+let isDragging = false;
+divider.addEventListener('mousedown', () => { isDragging = true; document.body.style.userSelect = 'none'; });
+document.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  const w = e.clientX;
+  if (w < 250 || w > window.innerWidth - 250) return;
+  leftPanel.style.width = w + 'px';
+});
+document.addEventListener('mouseup', () => { isDragging = false; document.body.style.userSelect = 'auto'; });
+</script>
+</body>
+</html>

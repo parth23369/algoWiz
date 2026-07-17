@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Topological Sort Visualization</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet"/>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Orbitron',sans-serif; background:#000; color:white; display:flex; height:100vh; overflow:hidden; }
+  .left-panel { width:33%; min-width:250px; background:#111; border-right:2px solid #0ff3; padding:2rem; overflow-y:auto; }
+  .left-panel h2 { color:#0ff; margin-bottom:1.5rem; font-size:1.8rem; }
+  .tree-container { background:#1a1a1a; border:2px solid #0ff3; border-radius:10px; height:250px; margin-bottom:0.6rem; position:relative; overflow:hidden; }
+  #graphSVG { width:100%; height:100%; display:block; }
+  .node-circle { fill:#0ff1; stroke:#0ff; stroke-width:2; transition:stroke 0.3s ease, fill 0.3s ease; }
+  .node-circle.ready   { stroke:#f0f; fill:#ff00ff1a; }
+  .node-circle.visiting{ stroke:gold; fill:#ffd7001a; }
+  .node-circle.done    { stroke:#0f0; fill:#00ff001a; }
+  .node-label { font-family:'Orbitron',sans-serif; font-size:11px; text-anchor:middle; dominant-baseline:central; pointer-events:none; fill:#0ff; }
+  .node-label.ready { fill:#f0f; }
+  .node-label.visiting { fill:gold; }
+  .node-label.done { fill:#0f0; }
+  .indeg-label { font-family:'Orbitron',sans-serif; font-size:9px; text-anchor:middle; fill:#0ff8; }
+  .edge { stroke:#0ff5; stroke-width:1.5; transition:stroke 0.3s ease; marker-end:url(#arrow); }
+  .edge.active { stroke:gold; stroke-width:2; }
+  .order-row { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:1rem; min-height: 30px; }
+  .order-chip { border:2px solid #0f0; color:#0f0; border-radius:6px; padding:3px 8px; font-size:0.7rem; }
+  .controls { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:1rem; }
+  .btn { background:#0ff3; padding:0.6rem 1rem; border:none; border-radius:8px; cursor:pointer; color:black; font-family:'Orbitron',sans-serif; font-size:0.8rem; transition:background 0.3s; }
+  .btn:hover { background:#0ff; }
+  .btn:disabled { opacity:0.3; cursor:not-allowed; }
+  .speed-row { display:flex; align-items:center; gap:8px; margin-bottom:1.2rem; font-size:0.75rem; color:#0ff; }
+  input[type=range] { flex:1; accent-color:#0ff; }
+  #status { font-size:0.75rem; color:#0ff; min-height:1.2rem; margin-bottom:1rem; text-align:center; }
+  .code-block h3 { color:#0ff; margin-bottom:0.5rem; font-size:1.2rem; }
+  pre { background:#000; padding:1rem; border-radius:8px; border:1px solid #0ff3; color:#0ff; overflow-x:auto; font-size:0.8rem; line-height:1.4rem; }
+  #divider { width:6px; background:#0ff3; cursor:col-resize; flex-shrink:0; }
+  #divider:hover { background:#0ff; }
+  .right-panel { flex:1; min-width:250px; padding:2rem; overflow-y:auto; }
+  .right-panel h1 { color:#0ff; font-size:2rem; margin-bottom:1rem; }
+  .right-panel p { font-size:1rem; color:#ccc; line-height:1.7; margin-bottom:1.2rem; }
+  .right-panel h2 { color:#0ff; font-size:1.3rem; margin:1.5rem 0 0.5rem; }
+  .right-panel ul { margin-left:1.2rem; color:#ccc; line-height:1.8; }
+  .highlight { color:#0ff; font-weight:bold; }
+  .legend { display:flex; gap:1.5rem; flex-wrap:wrap; margin-bottom:1.5rem; font-size:0.75rem; color:#ccc; }
+  .legend-item { display:flex; align-items:center; gap:6px; }
+  .legend-dot { width:14px; height:14px; border-radius:50%; border:2px solid; }
+</style>
+</head>
+<body>
+
+<div class="left-panel">
+  <h2>Topological Sort</h2>
+
+  <div class="tree-container" id="treeContainer">
+    <svg id="graphSVG">
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L0,6 L7,3 z" fill="#0ff8"/>
+        </marker>
+      </defs>
+    </svg>
+  </div>
+
+  <div style="font-size:0.65rem; color:#0ff8; margin-bottom:4px;">Topological order (as nodes finish):</div>
+  <div class="order-row" id="orderRow"></div>
+
+  <div id="status">Press "New DAG" to start</div>
+
+  <div class="controls">
+    <button class="btn" id="newBtn"   onclick="generateGraph()">New DAG</button>
+    <button class="btn" id="sortBtn"  onclick="startRun()" disabled>Run ▶</button>
+    <button class="btn" id="stepBtn"  onclick="doStep()"    disabled>Step</button>
+    <button class="btn" id="resetBtn" onclick="resetRun()"  disabled>Reset</button>
+  </div>
+
+  <div class="speed-row">
+    <span>Slow</span>
+    <input type="range" id="speedSlider" min="100" max="1000" value="500" step="50"/>
+    <span>Fast</span>
+  </div>
+
+  <div class="code-block">
+    <h3>Kahn's Algorithm Code</h3>
+    <pre><code>function topoSort(graph, n) {
+  const inDegree = new Array(n).fill(0);
+  for (const u in graph) for (const v of graph[u]) inDegree[v]++;
+
+  const queue = [];
+  for (let v = 0; v < n; v++) if (inDegree[v] === 0) queue.push(v);
+
+  const order = [];
+  while (queue.length > 0) {
+    const u = queue.shift();
+    order.push(u);
+
+    for (const v of graph[u]) {
+      inDegree[v]--;
+      if (inDegree[v] === 0) queue.push(v);
+    }
+  }
+
+  // if order.length < n, the graph has a cycle (no valid ordering)
+  return order;
+}</code></pre>
+  </div>
+</div>
+
+<div id="divider"></div>
+
+<div class="right-panel">
+  <h1>How Topological Sort Works</h1>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="border-color:#f0f"></div>Ready (in-degree = 0)</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:gold"></div>Processing outgoing edges</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#0f0"></div>Placed in the order</div>
+  </div>
+
+  <p>
+    A topological sort arranges the nodes of a Directed Acyclic Graph (DAG) in a line such that every edge points forward — from an earlier node to a later one. It only works on DAGs, since a cycle would force some node to come both before and after another.
+  </p>
+
+  <h2>Step by step (Kahn's Algorithm)</h2>
+  <ul>
+    <li>Compute each node's <span class="highlight">in-degree</span> — how many edges point into it.</li>
+    <li>Any node with in-degree 0 (magenta) has no unmet prerequisites — it's <span class="highlight">ready</span> to be placed.</li>
+    <li>Take a ready node, append it to the output order (green), and "remove" it from the graph by decrementing the in-degree of each of its neighbors.</li>
+    <li>Any neighbor whose in-degree just hit 0 becomes ready too, and joins the queue.</li>
+    <li>Repeat until every node has been placed. If some nodes never reach in-degree 0, the graph contains a cycle and no valid ordering exists.</li>
+  </ul>
+
+  <h2>Complexity</h2>
+  <p>
+    Time: <span class="highlight">O(V + E)</span> — each node and edge is processed once.<br/>
+    Space: <span class="highlight">O(V)</span> for the in-degree array and queue.
+  </p>
+
+  <h2>When is it used?</h2>
+  <ul>
+    <li>Build systems and task schedulers resolving dependency order.</li>
+    <li>Course prerequisite planning.</li>
+    <li>Spreadsheet formula recalculation order.</li>
+    <li>Package/module dependency resolution.</li>
+  </ul>
+
+  <h2>Compared to other approaches</h2>
+  <ul>
+    <li><span class="highlight">Kahn's algorithm (this):</span> BFS-style, using in-degree counts — naturally also detects cycles (leftover nodes).</li>
+    <li><span class="highlight">DFS-based topological sort:</span> runs a DFS and prepends each node to the order when its recursion finishes — same O(V+E) complexity, different bookkeeping.</li>
+    <li><span class="highlight">Cycle detection:</span> a natural prerequisite check often run first, since topological order is undefined for graphs with cycles.</li>
+  </ul>
+</div>
+
+<script>
+const NODE_R = 18;
+let nodes = [], adj = {}, inDegree = [];
+let steps = [], stepIdx = 0, autoTimer = null;
+const LABELS = ['A','B','C','D','E','F'];
+
+function generateGraph() {
+  clearTimer();
+  const n = 6;
+  nodes = [];
+  const svg = document.getElementById('graphSVG');
+  const W = svg.clientWidth || 300, H = svg.clientHeight || 250;
+  const cx = W/2, cy = H/2, R = Math.min(W,H)/2 - 35;
+
+  for (let i = 0; i < n; i++) {
+    const angle = (i * 2*Math.PI/n) - Math.PI/2;
+    nodes.push({ id:i, label:LABELS[i], cx: cx + R*Math.cos(angle), cy: cy + R*Math.sin(angle),
+                 circleEl:null, labelEl:null, indegEl:null });
+  }
+
+  adj = {}; nodes.forEach(nd => adj[nd.id] = []);
+  // Only add edges i -> j where i < j, guarantees a DAG
+  for (let i = 0; i < n; i++) {
+    for (let j = i+1; j < n; j++) {
+      if (Math.random() < 0.4) adj[i].push(j);
+    }
+  }
+  inDegree = new Array(n).fill(0);
+  for (let u = 0; u < n; u++) for (const v of adj[u]) inDegree[v]++;
+
+  drawGraph();
+  document.getElementById('orderRow').innerHTML = '';
+  steps = computeSteps();
+  stepIdx = 0;
+  document.getElementById('sortBtn').disabled = false;
+  document.getElementById('stepBtn').disabled = false;
+  document.getElementById('resetBtn').disabled = false;
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  setStatus(`DAG generated. ${steps.length} steps ready.`);
+}
+
+function drawGraph() {
+  const svg = document.getElementById('graphSVG');
+  svg.querySelectorAll(':scope > *:not(defs)').forEach(el => el.remove());
+
+  for (let u = 0; u < nodes.length; u++) {
+    for (const v of adj[u]) {
+      const na = nodes[u], nb = nodes[v];
+      const dx = nb.cx-na.cx, dy = nb.cy-na.cy, len = Math.hypot(dx,dy);
+      const ux = dx/len, uy = dy/len;
+      const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+      line.setAttribute('x1', na.cx + ux*NODE_R); line.setAttribute('y1', na.cy + uy*NODE_R);
+      line.setAttribute('x2', nb.cx - ux*(NODE_R+6)); line.setAttribute('y2', nb.cy - uy*(NODE_R+6));
+      line.classList.add('edge');
+      line.id = `edge-${u}-${v}`;
+      svg.appendChild(line);
+    }
+  }
+
+  nodes.forEach(nd => {
+    const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circle.setAttribute('cx', nd.cx); circle.setAttribute('cy', nd.cy); circle.setAttribute('r', NODE_R);
+    circle.classList.add('node-circle');
+    svg.appendChild(circle);
+    nd.circleEl = circle;
+
+    const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+    label.setAttribute('x', nd.cx); label.setAttribute('y', nd.cy);
+    label.classList.add('node-label');
+    label.textContent = nd.label;
+    svg.appendChild(label);
+    nd.labelEl = label;
+
+    const indeg = document.createElementNS('http://www.w3.org/2000/svg','text');
+    indeg.setAttribute('x', nd.cx); indeg.setAttribute('y', nd.cy - NODE_R - 8);
+    indeg.classList.add('indeg-label');
+    indeg.textContent = `in:${inDegree[nd.id]}`;
+    svg.appendChild(indeg);
+    nd.indegEl = indeg;
+  });
+}
+
+function computeSteps() {
+  const n = nodes.length;
+  const indeg = inDegree.slice();
+  const steps = [];
+  const queue = [];
+  for (let v = 0; v < n; v++) if (indeg[v] === 0) { queue.push(v); steps.push({type:'ready', v}); }
+
+  const order = [];
+  while (queue.length > 0) {
+    const u = queue.shift();
+    steps.push({type:'process', u});
+    order.push(u);
+
+    for (const v of adj[u]) {
+      steps.push({type:'edge', u, v});
+      indeg[v]--;
+      steps.push({type:'decrement', v, newIndeg: indeg[v]});
+      if (indeg[v] === 0) { queue.push(v); steps.push({type:'ready', v}); }
+    }
+    steps.push({type:'done', u});
+  }
+
+  steps.push({type:'finish', order, hasCycle: order.length < n});
+  return steps;
+}
+
+function doStep() {
+  if (stepIdx >= steps.length) return;
+  const s = steps[stepIdx++];
+
+  if (s.type === 'ready') {
+    nodes[s.v].circleEl.classList.add('ready');
+    nodes[s.v].labelEl.classList.add('ready');
+    setStatus(`${nodes[s.v].label} has in-degree 0 — ready.`);
+  } else if (s.type === 'process') {
+    nodes[s.u].circleEl.classList.remove('ready');
+    nodes[s.u].labelEl.classList.remove('ready');
+    nodes[s.u].circleEl.classList.add('visiting');
+    nodes[s.u].labelEl.classList.add('visiting');
+    setStatus(`Processing ${nodes[s.u].label}…`);
+  } else if (s.type === 'edge') {
+    const el = document.getElementById(`edge-${s.u}-${s.v}`);
+    if (el) el.classList.add('active');
+  } else if (s.type === 'decrement') {
+    nodes[s.v].indegEl.textContent = `in:${s.newIndeg}`;
+  } else if (s.type === 'done') {
+    document.querySelectorAll('.edge.active').forEach(el => el.classList.remove('active'));
+    nodes[s.u].circleEl.classList.remove('visiting');
+    nodes[s.u].labelEl.classList.remove('visiting');
+    nodes[s.u].circleEl.classList.add('done');
+    nodes[s.u].labelEl.classList.add('done');
+    const chip = document.createElement('div');
+    chip.className = 'order-chip';
+    chip.textContent = nodes[s.u].label;
+    document.getElementById('orderRow').appendChild(chip);
+  } else if (s.type === 'finish') {
+    if (s.hasCycle) {
+      setStatus(`❌ Cycle detected — only ${s.order.length}/${nodes.length} nodes could be ordered.`);
+    } else {
+      setStatus(`✅ Topological order: ${s.order.map(i => nodes[i].label).join(' → ')}`);
+    }
+    clearTimer();
+    document.getElementById('sortBtn').textContent = 'Run ▶';
+  }
+}
+
+function startRun() {
+  if (autoTimer) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+  if (stepIdx >= steps.length) return;
+  document.getElementById('sortBtn').textContent = 'Pause ⏸';
+  const delay = 1100 - parseInt(document.getElementById('speedSlider').value);
+  autoTimer = setInterval(() => {
+    if (stepIdx >= steps.length) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+    doStep();
+  }, delay);
+}
+
+function resetRun() {
+  clearTimer();
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  drawGraph();
+  document.getElementById('orderRow').innerHTML = '';
+  steps = computeSteps();
+  stepIdx = 0;
+  setStatus(`Reset. ${steps.length} steps ready.`);
+}
+
+function setStatus(msg) { document.getElementById('status').textContent = msg; }
+function clearTimer() { clearInterval(autoTimer); autoTimer = null; }
+
+const divider = document.getElementById('divider');
+const leftPanel = document.querySelector('.left-panel');
+let isDragging = false;
+divider.addEventListener('mousedown', () => { isDragging = true; document.body.style.userSelect = 'none'; });
+document.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  const w = e.clientX;
+  if (w < 250 || w > window.innerWidth - 250) return;
+  leftPanel.style.width = w + 'px';
+});
+document.addEventListener('mouseup', () => { isDragging = false; document.body.style.userSelect = 'auto'; });
+</script>
+</body>
+</html>

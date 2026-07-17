@@ -27,6 +27,15 @@
       border-right: 2px solid #0ff3;
       padding: 2rem;
       overflow-y: auto;
+      transition: width 0.2s ease, padding 0.2s ease, opacity 0.2s ease;
+    }
+
+    .sidebar.collapsed {
+      width: 0;
+      padding: 2rem 0;
+      opacity: 0;
+      overflow: hidden;
+      border-right: none;
     }
 
     .sidebar h2 {
@@ -64,6 +73,13 @@
       width: 67%;
       padding: 2rem;
       overflow-y: auto;
+      transition: width 0.2s ease;
+    }
+
+    .content.expanded {
+      width: 100%;
+      padding: 0;
+      overflow: hidden;
     }
 
     .content h2 {
@@ -88,8 +104,29 @@
 
     iframe {
       width: 100%;
-      height: 90vh;
+      height: 100vh;
       border: none;
+      display: block;
+    }
+
+    #backBtn {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      z-index: 10;
+      background-color: #0ff3;
+      padding: 0.6rem 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      color: black;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem;
+      transition: background 0.3s;
+    }
+
+    #backBtn:hover {
+      background-color: #0ff;
     }
 
   </style>
@@ -97,15 +134,27 @@
 <body>
 
   <!-- Sidebar with problems -->
-  <div class="sidebar">
+  <div class="sidebar" id="sidebar">
     <h2>Dynamic Programming</h2>
     <ul class="problem-list">
       <li onclick="loadVisualization('knapsack')">
-        <i>🔍</i> knapsack
+        <i>🔍</i> Knapsack (2D DP)
       </li>
-      <!-- Future items:
-      <li onclick="loadVisualization('mergeSort')"><i>🧬</i> Merge Sort</li>
-      -->
+      <li onclick="loadVisualization('house-robber')">
+        <i>🔍</i> House Robber (1D DP)
+      </li>
+      <li onclick="loadVisualization('lcs')">
+        <i>🔍</i> Longest Common Subsequence (DP on Strings)
+      </li>
+      <li onclick="loadVisualization('lis')">
+        <i>🔍</i> Longest Increasing Subsequence (DP on Subsequences)
+      </li>
+      <li onclick="loadVisualization('stocks')">
+        <i>🔍</i> Buy &amp; Sell Stocks (State Machine)
+      </li>
+      <li onclick="loadVisualization('partition-dp')">
+        <i>🔍</i> Palindrome Partitioning (Partition DP)
+      </li>
     </ul>
   </div>
 
@@ -137,11 +186,25 @@
 
   <script>
     function loadVisualization(problemName) {
+      const sidebar     = document.getElementById('sidebar');
       const contentArea = document.getElementById('content-area');
-      // Replace content with an iframe to your visualization page
+
+      // Collapse the outer sidebar so the iframe's own left panel
+      // doesn't end up sitting next to it.
+      sidebar.classList.add('collapsed');
+      contentArea.classList.add('expanded');
+
+      // Replace content with an iframe to your visualization page,
+      // plus a small floating button to come back to the problem list.
       contentArea.innerHTML = `
+        <button id="backBtn" onclick="showList()">← Back</button>
         <iframe src="visualizations/${problemName}.html"></iframe>
       `;
+    }
+
+    function showList() {
+      // Restore the original intro content and sidebar.
+      location.reload();
     }
   </script>
 

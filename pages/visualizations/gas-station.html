@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Gas Station - Greedy</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet"/>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Orbitron',sans-serif; background:#000; color:white; display:flex; height:100vh; overflow:hidden; }
+  .left-panel { width:33%; min-width:250px; background:#111; border-right:2px solid #0ff3; padding:2rem; overflow-y:auto; }
+  .left-panel h2 { color:#0ff; margin-bottom:1.5rem; font-size:1.8rem; }
+  .tree-container { background:#1a1a1a; border:2px solid #0ff3; border-radius:10px; height:280px; margin-bottom:1rem; overflow:auto; padding:12px; }
+  .row-label { font-size:0.65rem; color:#0ff8; margin-bottom:4px; }
+  .array-row { display:flex; gap:4px; margin-bottom:14px; }
+  .cell { min-width:40px; height:36px; display:flex; align-items:center; justify-content:center; font-size:0.7rem; border-radius:6px; background:#0ff1; border:2px solid #0ff; color:#0ff; transition:all 0.3s ease; flex-direction:column; }
+  .cell.empty { background:transparent; border-color:#0ff2; color:#0ff5; }
+  .cell.current { border-color:gold; background:#ffd7001a; color:gold; }
+  .cell.start   { border-color:#f0f; background:#ff00ff1a; color:#f0f; }
+  .cell.answer  { border-color:#0f0; background:#00ff001a; color:#0f0; }
+  .idx { font-size:0.5rem; color:#0ff8; }
+  .tank-box { border:2px solid #0ff3; border-radius:8px; padding:0.6rem; font-size:0.75rem; color:#0ff; text-align:center; }
+  .tank-box.negative { border-color:#e24b4a; color:#e24b4a; }
+  .controls { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:1rem; }
+  .btn { background:#0ff3; padding:0.6rem 1rem; border:none; border-radius:8px; cursor:pointer; color:black; font-family:'Orbitron',sans-serif; font-size:0.8rem; transition:background 0.3s; }
+  .btn:hover { background:#0ff; }
+  .btn:disabled { opacity:0.3; cursor:not-allowed; }
+  .speed-row { display:flex; align-items:center; gap:8px; margin-bottom:1.2rem; font-size:0.75rem; color:#0ff; }
+  input[type=range] { flex:1; accent-color:#0ff; }
+  #status { font-size:0.75rem; color:#0ff; min-height:1.2rem; margin-bottom:1rem; text-align:center; }
+  .code-block h3 { color:#0ff; margin-bottom:0.5rem; font-size:1.2rem; }
+  pre { background:#000; padding:1rem; border-radius:8px; border:1px solid #0ff3; color:#0ff; overflow-x:auto; font-size:0.8rem; line-height:1.4rem; }
+  #divider { width:6px; background:#0ff3; cursor:col-resize; flex-shrink:0; }
+  #divider:hover { background:#0ff; }
+  .right-panel { flex:1; min-width:250px; padding:2rem; overflow-y:auto; }
+  .right-panel h1 { color:#0ff; font-size:2rem; margin-bottom:1rem; }
+  .right-panel p { font-size:1rem; color:#ccc; line-height:1.7; margin-bottom:1.2rem; }
+  .right-panel h2 { color:#0ff; font-size:1.3rem; margin:1.5rem 0 0.5rem; }
+  .right-panel ul { margin-left:1.2rem; color:#ccc; line-height:1.8; }
+  .highlight { color:#0ff; font-weight:bold; }
+  .legend { display:flex; gap:1.5rem; flex-wrap:wrap; margin-bottom:1.5rem; font-size:0.75rem; color:#ccc; }
+  .legend-item { display:flex; align-items:center; gap:6px; }
+  .legend-dot { width:14px; height:14px; border-radius:4px; border:2px solid; }
+</style>
+</head>
+<body>
+
+<div class="left-panel">
+  <h2>Gas Station</h2>
+
+  <div class="tree-container" id="treeContainer">
+    <div class="row-label">gas[i] - cost[i] at each station (circular route)</div>
+    <div class="array-row" id="diffRow"></div>
+    <div class="tank-box" id="tankBox">tank: 0</div>
+  </div>
+
+  <div id="status">Press "New Route" to start</div>
+
+  <div class="controls">
+    <button class="btn" id="newBtn"   onclick="generateRoute()">New Route</button>
+    <button class="btn" id="sortBtn"  onclick="startRun()" disabled>Run ▶</button>
+    <button class="btn" id="stepBtn"  onclick="doStep()"    disabled>Step</button>
+    <button class="btn" id="resetBtn" onclick="resetRun()"  disabled>Reset</button>
+  </div>
+
+  <div class="speed-row">
+    <span>Slow</span>
+    <input type="range" id="speedSlider" min="100" max="1000" value="450" step="50"/>
+    <span>Fast</span>
+  </div>
+
+  <div class="code-block">
+    <h3>Greedy Code</h3>
+    <pre><code>function canCompleteCircuit(gas, cost) {
+  let tank = 0, totalSurplus = 0, start = 0;
+
+  for (let i = 0; i < gas.length; i++) {
+    const diff = gas[i] - cost[i];
+    tank += diff;
+    totalSurplus += diff;
+
+    if (tank < 0) {
+      // can't reach the next station from `start`
+      start = i + 1;   // greedy: try starting fresh from here
+      tank = 0;
+    }
+  }
+
+  return totalSurplus >= 0 ? start : -1;  // -1 = no valid start exists
+}</code></pre>
+  </div>
+</div>
+
+<div id="divider"></div>
+
+<div class="right-panel">
+  <h1>How Gas Station Works</h1>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="border-color:gold"></div>Current station</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#f0f"></div>New candidate start</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#0f0"></div>Final answer — valid starting station</div>
+  </div>
+
+  <p>
+    Stations are arranged in a circle, each giving some gas and costing some gas to reach the next one. You need to find a starting station from which you can complete the full loop without your tank ever going negative. The greedy insight: if you run out of gas trying to reach station i+1, no station between your current start and i could have worked either — so jump straight past all of them.
+  </p>
+
+  <h2>Step by step</h2>
+  <ul>
+    <li>Track a running <span class="highlight">tank</span> (since the current candidate start) and a <span class="highlight">totalSurplus</span> (across the whole circuit).</li>
+    <li>At each station, add <code>gas[i] - cost[i]</code> to both.</li>
+    <li>If <span class="highlight">tank</span> ever drops below 0, the current start can't work — reset tank to 0 and move the <span class="highlight">candidate start</span> to the very next station (magenta).</li>
+    <li>After the full loop, if <span class="highlight">totalSurplus &gt;= 0</span>, the last candidate start is guaranteed to work (green) — otherwise no valid start exists anywhere.</li>
+  </ul>
+
+  <h2>Why skip past every station in between?</h2>
+  <p>
+    If you can't reach station i+1 starting from station s, then for any station s' between s and i, the tank when leaving s' would only be smaller or equal — since you'd have had less "head start" surplus. So none of those intermediate stations could possibly work either, and it's safe to jump straight to i+1.
+  </p>
+
+  <h2>Complexity</h2>
+  <p>
+    Time: <span class="highlight">O(n)</span> — a single pass around the circuit.<br/>
+    Space: <span class="highlight">O(1)</span> — just a few running counters.
+  </p>
+
+  <h2>When is it used?</h2>
+  <ul>
+    <li>Circular scheduling and routing feasibility checks.</li>
+    <li>Any "does a valid starting point exist" problem over a cyclic sequence of gains/costs.</li>
+    <li>Warm-up problem for prefix-sum and Kadane's-algorithm-style reasoning.</li>
+  </ul>
+
+  <h2>Compared to other approaches</h2>
+  <ul>
+    <li><span class="highlight">Greedy (this):</span> O(n) — one pass, skips provably-invalid starts instead of checking them.</li>
+    <li><span class="highlight">Brute force:</span> O(n²) — try every station as a start and simulate the whole loop from there.</li>
+  </ul>
+</div>
+
+<script>
+let gas = [], cost = [], diffs = [];
+let n = 0;
+let cellEls = [];
+let steps = [], stepIdx = 0, autoTimer = null;
+
+function generateRoute() {
+  clearTimer();
+  n = 7;
+  gas = Array.from({length:n}, () => Math.floor(Math.random()*10)+1);
+  cost = Array.from({length:n}, () => Math.floor(Math.random()*10)+1);
+  diffs = gas.map((g,i) => g - cost[i]);
+
+  // Bias so a solution usually exists: bump one random station's gas up.
+  const boost = Math.floor(Math.random()*n);
+  gas[boost] += 8;
+  diffs[boost] = gas[boost] - cost[boost];
+
+  drawRow();
+  steps = computeSteps();
+  stepIdx = 0;
+  document.getElementById('sortBtn').disabled = false;
+  document.getElementById('stepBtn').disabled = false;
+  document.getElementById('resetBtn').disabled = false;
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  setStatus(`${n} stations generated. ${steps.length} steps.`);
+}
+
+function drawRow() {
+  const row = document.getElementById('diffRow');
+  row.innerHTML = '';
+  cellEls = [];
+  diffs.forEach((d, idx) => {
+    const c = document.createElement('div');
+    c.className = 'cell';
+    c.innerHTML = `${d >= 0 ? '+' : ''}${d}<span class="idx">s${idx}</span>`;
+    row.appendChild(c);
+    cellEls.push(c);
+  });
+  document.getElementById('tankBox').textContent = 'tank: 0';
+  document.getElementById('tankBox').classList.remove('negative');
+}
+
+function computeSteps() {
+  const steps = [];
+  let tank = 0, totalSurplus = 0, start = 0;
+
+  for (let i = 0; i < n; i++) {
+    steps.push({type:'visit', i});
+    tank += diffs[i];
+    totalSurplus += diffs[i];
+    steps.push({type:'tank', i, tank});
+
+    if (tank < 0) {
+      steps.push({type:'reset', i, newStart: i+1});
+      start = i + 1;
+      tank = 0;
+    }
+  }
+
+  const answer = totalSurplus >= 0 ? (start % n) : -1;
+  steps.push({type:'finish', answer, totalSurplus});
+  return steps;
+}
+
+function doStep() {
+  if (stepIdx >= steps.length) return;
+  const s = steps[stepIdx++];
+
+  if (s.type === 'visit') {
+    cellEls.forEach(c => c.classList.remove('current'));
+    cellEls[s.i].classList.add('current');
+    setStatus(`At station ${s.i}: gas-cost = ${diffs[s.i] >= 0 ? '+' : ''}${diffs[s.i]}`);
+  } else if (s.type === 'tank') {
+    const box = document.getElementById('tankBox');
+    box.textContent = `tank: ${s.tank}`;
+    box.classList.toggle('negative', s.tank < 0);
+    setStatus(`Running tank = ${s.tank}`);
+  } else if (s.type === 'reset') {
+    cellEls.forEach(c => c.classList.remove('start'));
+    if (s.newStart < n) cellEls[s.newStart].classList.add('start');
+    setStatus(`Tank went negative — new candidate start: station ${s.newStart % n}`);
+  } else if (s.type === 'finish') {
+    cellEls.forEach(c => c.classList.remove('current','start'));
+    if (s.answer >= 0) {
+      cellEls[s.answer].classList.add('answer');
+      setStatus(`✅ Valid starting station: ${s.answer} (total surplus = ${s.totalSurplus})`);
+    } else {
+      setStatus(`❌ No valid starting station exists (total surplus = ${s.totalSurplus})`);
+    }
+    clearTimer();
+    document.getElementById('sortBtn').textContent = 'Run ▶';
+  }
+}
+
+function startRun() {
+  if (autoTimer) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+  if (stepIdx >= steps.length) return;
+  document.getElementById('sortBtn').textContent = 'Pause ⏸';
+  const delay = 1100 - parseInt(document.getElementById('speedSlider').value);
+  autoTimer = setInterval(() => {
+    if (stepIdx >= steps.length) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+    doStep();
+  }, delay);
+}
+
+function resetRun() {
+  clearTimer();
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  drawRow();
+  steps = computeSteps();
+  stepIdx = 0;
+  setStatus(`Reset. ${steps.length} steps.`);
+}
+
+function setStatus(msg) { document.getElementById('status').textContent = msg; }
+function clearTimer() { clearInterval(autoTimer); autoTimer = null; }
+
+const divider = document.getElementById('divider');
+const leftPanel = document.querySelector('.left-panel');
+let isDragging = false;
+divider.addEventListener('mousedown', () => { isDragging = true; document.body.style.userSelect = 'none'; });
+document.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  const w = e.clientX;
+  if (w < 250 || w > window.innerWidth - 250) return;
+  leftPanel.style.width = w + 'px';
+});
+document.addEventListener('mouseup', () => { isDragging = false; document.body.style.userSelect = 'auto'; });
+</script>
+</body>
+</html>

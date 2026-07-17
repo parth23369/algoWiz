@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Graph Algorithms</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Orbitron', sans-serif;
+      background-color: #000;
+      color: white;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      width: 33%;
+      background-color: #111;
+      border-right: 2px solid #0ff3;
+      padding: 2rem;
+      overflow-y: auto;
+      transition: width 0.2s ease, padding 0.2s ease, opacity 0.2s ease;
+    }
+
+    .sidebar.collapsed {
+      width: 0;
+      padding: 2rem 0;
+      opacity: 0;
+      overflow: hidden;
+      border-right: none;
+    }
+
+    .sidebar h2 {
+      color: #0ff;
+      margin-bottom: 1.5rem;
+    }
+
+    .sidebar h3 {
+      color: #0ff8;
+      font-size: 0.8rem;
+      margin: 1rem 0 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .problem-list {
+      list-style: none;
+    }
+
+    .problem-list li {
+      padding: 1rem;
+      margin-bottom: 1rem;
+      background-color: #1a1a1a;
+      border-radius: 8px;
+      border: 1px solid #0ff3;
+      cursor: pointer;
+      transition: background 0.3s;
+      display: flex;
+      align-items: center;
+    }
+
+    .problem-list li:hover {
+      background-color: #0ff3;
+      color: black;
+    }
+
+    .problem-list li i {
+      margin-right: 0.75rem;
+      color: #0ff;
+    }
+
+    .content {
+      width: 67%;
+      padding: 2rem;
+      overflow-y: auto;
+      transition: width 0.2s ease;
+    }
+
+    .content.expanded {
+      width: 100%;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .content h2 {
+      font-size: 2rem;
+      color: #0ff;
+      margin-bottom: 1rem;
+    }
+
+    .content p {
+      font-size: 1rem;
+      color: #ccc;
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+    }
+
+    .content img {
+      width: 100%;
+      max-width: 500px;
+      border-radius: 10px;
+      border: 2px solid #0ff3;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100vh;
+      border: none;
+      display: block;
+    }
+
+    #backBtn {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      z-index: 10;
+      background-color: #0ff3;
+      padding: 0.6rem 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      color: black;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem;
+      transition: background 0.3s;
+    }
+
+    #backBtn:hover {
+      background-color: #0ff;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar with problems -->
+  <div class="sidebar" id="sidebar">
+    <h2>Graph Algorithms</h2>
+
+    <h3>Traversal</h3>
+    <ul class="problem-list">
+      <li onclick="openproblem('dfs')">
+        <i>🔍</i> Depth-First Search
+      </li>
+      <li onclick="openproblem('bfs')">
+        <i>🔍</i> Breadth-First Search
+      </li>
+    </ul>
+
+    <h3>Shortest Path / Ordering</h3>
+    <ul class="problem-list">
+      <li onclick="openproblem('dijkstra')">
+        <i>🔍</i> Dijkstra's Algorithm
+      </li>
+      <li onclick="openproblem('topological-sort')">
+        <i>🔍</i> Topological Sort
+      </li>
+      <li onclick="openproblem('cycle-detection')">
+        <i>🔍</i> Cycle Detection
+      </li>
+    </ul>
+
+    <h3>Minimum Spanning Tree</h3>
+    <ul class="problem-list">
+      <li onclick="openproblem('prims-mst')">
+        <i>🔍</i> Prim's Algorithm
+      </li>
+      <li onclick="openproblem('kruskal-mst')">
+        <i>🔍</i> Kruskal's Algorithm
+      </li>
+    </ul>
+  </div>
+
+  <!-- Right content area -->
+  <div class="content" id="content-area">
+    <h2>What is Graph Traversal?</h2>
+    <p>
+      Graph traversal is the process of visiting all the vertices of a graph in a systematic manner. It is a fundamental operation in graph theory and has various applications in computer science and mathematics.<br>
+    </p>
+    <p>
+      There are two main algorithms for graph traversal:
+    </p>
+    <ul>
+      <li><strong>Depth-First Search (DFS):</strong> Explores as far as possible along each branch before backtracking.</li>
+      <li><strong>Breadth-First Search (BFS):</strong> Explores all neighbors at the present depth prior to moving on to nodes at the next depth level.</li>
+    </ul>
+    </p>
+    <img src="https://media.geeksforgeeks.org/wp-content/uploads/20250705181016967800/directed_graph.webp"/>
+    <p>
+        Applications of Graph Traversal Algorithms<br>
+<br>The following are some standard algorithms that follow Graph Traversal techniques:<br>
+
+<br><a href ="visualizations/dfs.html">Depth-First Search</a> is an algorithm for traversing or searching tree or graph data structures. It starts at the root node and explores as far as possible along each branch before backtracking.
+<br><a href ="pages/visualizations/bfs.html">Breadth-First Search</a> is an algorithm for traversing or searching tree or graph data structures. It starts at the root node and explores all the neighboring nodes at the present depth prior to moving on to nodes at the next depth level.
+    </p>
+    <p>
+        Beyond plain traversal, many important algorithms are built directly on top of DFS/BFS: <strong>Dijkstra's Algorithm</strong> finds shortest paths in weighted graphs, <strong>Topological Sort</strong> orders the nodes of a dependency graph (DAG), <strong>Cycle Detection</strong> checks whether a graph contains a loop, and <strong>Prim's</strong> and <strong>Kruskal's</strong> algorithms build a Minimum Spanning Tree connecting every node at the lowest total cost. Explore each one from the sidebar.
+    </p>
+  </div>
+
+  <script>
+    function openproblem(problemName) {
+      const sidebar = document.getElementById('sidebar');
+      const content = document.getElementById('content-area');
+
+      // hide sidebar, expand content
+      sidebar.classList.add('collapsed');
+      content.classList.add('expanded');
+
+      // load visualization
+      loadVisualization(problemName);
+    }
+
+    function loadVisualization(problemName) {
+      const contentArea = document.getElementById('content-area');
+      // Replace content with an iframe to the visualization page,
+      // plus a small floating button to come back to the problem list.
+      contentArea.innerHTML = `
+        <button id="backBtn" onclick="showList()">← Back</button>
+        <iframe src="visualizations/${problemName}.html"></iframe>
+      `;
+    }
+
+    function showList() {
+      // Restore the original intro content and sidebar.
+      location.reload();
+    }
+  </script>
+
+</body>
+</html>

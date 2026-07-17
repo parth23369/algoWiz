@@ -155,7 +155,7 @@
 
 <!-- ══════════════════ LEFT PANEL ══════════════════ -->
 <div class="left-panel">
-  <h2>Bubble Sort</h2>
+  <h2>Quick Sort</h2>
 
   <!-- Bar chart visualization area -->
   <div class="viz-box" id="vizBox">
@@ -182,75 +182,84 @@
 
   <!-- Code block -->
   <div class="code-block">
-    <h3>Bubble Sort Code</h3>
-    <pre><code>function bubbleSort(arr) {
-  let n = arr.length;
+    <h3>Quick Sort Code</h3>
+    <pre><code>function quickSort(arr, low = 0, high = arr.length - 1) {
+  if (low < high) {
+    let pi = partition(arr, low, high);
 
-  // outer loop: n-1 passes
-  for (let i = 0; i &lt; n - 1; i++) {
+    // sort left part
+    quickSort(arr, low, pi - 1);
 
-    // inner loop: compare neighbours
-    for (let j = 0; j &lt; n - 1 - i; j++) {
-
-      // if left > right → swap
-      if (arr[j] &gt; arr[j + 1]) {
-        let temp  = arr[j];
-        arr[j]    = arr[j + 1];
-        arr[j + 1] = temp;
-      }
-    }
+    // sort right part
+    quickSort(arr, pi + 1, high);
   }
   return arr;
-}</code></pre>
+}
+
+function partition(arr, low, high) {
+  let pivot = arr[high];   // choose last element as pivot
+  let i = low - 1;
+
+  for (let j = low; j < high; j++) {
+    // if current element < pivot
+    if (arr[j] < pivot) {
+      i++;
+      // swap arr[i] and arr[j]
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+  }
+
+  // place pivot in correct position
+  [arr[i + 1], arr[high]] = [arr[high], arr[i + 1]];
+
+  return i + 1;
+}
+</code></pre>
   </div>
 </div>
 <div id="divider"></div>
 <!-- ══════════════════ RIGHT PANEL ══════════════════ -->
 <div class="right-panel">
-  <h1>How Bubble Sort Works</h1>
+  <h1>How Quick Sort Works</h1>
 
   <div class="legend">
     <div class="legend-item"><div class="legend-dot" style="background:#0ff"></div>Unsorted</div>
     <div class="legend-item"><div class="legend-dot" style="background:yellow"></div>Being compared</div>
     <div class="legend-item"><div class="legend-dot" style="background:red"></div>Being swapped</div>
     <div class="legend-item"><div class="legend-dot" style="background:#0f0"></div>Sorted (in place)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#f0f"></div>Pivot</div>
   </div>
 
   <p>
-    Bubble Sort repeatedly steps through the list, <span class="highlight">compares adjacent elements</span>,
-    and swaps them if they're in the wrong order. After each full pass, the largest
-    unsorted element "bubbles up" to its correct position at the end.
+    Quick Sort is a divide-and-conquer algorithm that works by selecting a "pivot" element from the array and partitioning the other elements into two sub-arrays according to whether they are less than or greater than the pivot. The sub-arrays are then recursively sorted.
   </p>
 
   <h2>Step by step</h2>
   <ul>
-    <li>Start at index 0. Compare arr[0] and arr[1].</li>
-    <li>If arr[0] &gt; arr[1] → swap them.</li>
-    <li>Move to index 1. Compare arr[1] and arr[2]. And so on.</li>
-    <li>After one full pass, the <span class="highlight">largest element is at the end</span> — it's sorted.</li>
-    <li>Repeat for the remaining n−1 elements, then n−2, and so on.</li>
-    <li>Stop when no swaps happen in a pass — array is sorted.</li>
+    <li>Choose a pivot as the last element.</li>
+    <li>Partition the array so that elements less than the pivot come before it, and elements greater come after it.</li>
+    <li>Recursively apply the above steps to the sub-arrays of elements less than and greater than the pivot.</li>
+    <li>Base case: arrays of size 0 or 1 are already sorted.</li>
   </ul>
 
   <h2>Complexity</h2>
   <p>
-    Time: <span class="highlight">O(n²)</span> — two nested loops, each running up to n times.<br/>
-    Space: <span class="highlight">O(1)</span> — sorting happens in-place, no extra array needed.<br/>
-    Stable: <span class="highlight">Yes</span> — equal elements never swap past each other.
+    Average and best case: O(n log n) — when the pivot divides the array into two equal halves<br>
+    Worst case: O(n²) — when the smallest or largest element is always chosen as the pivot (e.g., already sorted array either in ascending or descending order)
+    Space complexity: O(log n) on average due to recursive stack space, O(n) in worst case
+    Stable: No (equal elements may not maintain their original order)
   </p>
 
   <h2>When is it used?</h2>
   <p>
-    Almost never in production — it's too slow for large data. But it's the best algorithm
-    to <em>teach</em> sorting because the logic is completely transparent: you can watch
-    every comparison and every swap happen, step by step.
+    Quick Sort is widely used in practice due to its efficiency and in-place sorting capability. It's often the default sorting algorithm in many programming languages' standard libraries (e.g., Java's Arrays.sort for primitives). However, it may not be the best choice for small arrays or when stability is required. Thus it is used as hybrid with other algorithms like Insertion Sort for small sub-arrays, and Merge Sort when stability is needed while Quick Sort handles the large sub-arrays.
   </p>
 
   <h2>Compared to other sorts</h2>
   <ul>
-    <li><span class="highlight">Merge Sort:</span> O(n log n) — much faster, but uses O(n) extra space</li>
-    <li><span class="highlight">Quick Sort:</span> O(n log n) average — in-place but not stable</li>
-    <li><span class="highlight">Bubble Sort:</span> O(n²) — slow, but simple and educational</li>
+    <li><span class="highlight">Merge Sort</span>: Merge Sort is stable and has a guaranteed O(n log n) time complexity, but it requires O(n) extra space. Quick Sort is generally faster in practice due to better cache performance and lower constant factors, but it can degrade to O(n²) in the worst case.</li>
+    <li><span class="highlight">Heap Sort</span>: Heap Sort has O(n log n) time complexity and O(1) space complexity, but it is not stable and typically slower than Quick Sort due to more complex memory access patterns.</li>
+    <li><span class="highlight">Insertion Sort</span>: Insertion Sort is efficient for small or nearly sorted arrays with O(n) best-case time complexity, but it has O(n²) worst-case time complexity. Quick Sort is much faster for larger arrays.</li>
   </ul>
 </div>
 
@@ -269,9 +278,9 @@
     clearInterval(autoTimer);
     autoTimer = null;
 
-    // Make 8 random numbers between 10 and 99
+    // Make 20 random numbers between 10 and 99
     array = [];
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 20; i++) {
       array.push(Math.floor(Math.random() * 90) + 10);
     }
 
@@ -294,58 +303,71 @@
   // We simulate the full sort and record what happened at each moment.
   // This lets us play, pause, and step without re-running the sort logic.
   function computeSteps(arr) {
-    let log  = [];   // list of step objects we'll return
-    let n    = arr.length;
-    let sortedIndices = new Set();  // indices that are fully in place
-
-    for (let i = 0; i < n - 1; i++) {
-      for (let j = 0; j < n - 1 - i; j++) {
-
-        // Record: "we are comparing j and j+1"
-        log.push({
-          type:    'compare',
-          arr:     [...arr],          // snapshot of the array RIGHT NOW
-          compare: [j, j + 1],       // which two bars are yellow
-          sorted:  [...sortedIndices]
-        });
-
-        if (arr[j] > arr[j + 1]) {
-          // Swap in our simulation array
-          let temp   = arr[j];
-          arr[j]     = arr[j + 1];
-          arr[j + 1] = temp;
-
-          // Record: "we swapped j and j+1"
-          log.push({
-            type:    'swap',
-            arr:     [...arr],
-            compare: [j, j + 1],     // these two bars turn red during swap
-            sorted:  [...sortedIndices]
-          });
-        }
-      }
-      // After each pass, the element at position (n-1-i) is in its final place
-      sortedIndices.add(n - 1 - i);
-    }
-    sortedIndices.add(0);  // last remaining element is also sorted
-
-    // Final step: show the fully sorted array, all green
-    log.push({
-      type:    'done',
-      arr:     [...arr],
+    let steps = [];
+    let work = [...arr];
+    quickSort(work, 0, arr.length - 1, steps);
+    steps.push({
+      type: 'done',
+      arr: [...work],
       compare: [],
-      sorted:  [...Array(n).keys()]  // [0,1,2,3,4,5,6,7]
+      sorted: [...Array(arr.length).keys()]
     });
-
-    return log;
+    return steps;
   }
 
+  function quickSort(arr, left, right, steps){
+    if(left<right){
+      let pivot = partition(arr, left, right, steps);
+      quickSort(arr, left, pivot-1, steps);
+      quickSort(arr, pivot+1, right, steps);
+    }
+  }
+  function partition(arr, left, right, steps){
+    let pivot = arr[right];
+    let i = left - 1;
+    steps.push({
+      type: 'pivot',
+      arr: [...arr],
+      compare: [right],  // pivot is always rightmost in your implementation
+      sorted: [],
+      pivot: right
+    });
+    for (let j = left; j < right; j++) {
+      steps.push({
+        type: 'compare',
+        arr: [...arr],
+        compare: [j, right],  // j is current, right is pivot
+        sorted: [],
+        pivot: right
+      });
+      if (arr[j] < pivot) {
+        i++;
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+        steps.push({
+          type: 'swap',
+          arr: [...arr],
+          compare: [i, j],
+          sorted: [],
+          pivot: right 
+        });
+      }
+    }
+    [arr[i + 1], arr[right]] = [arr[right], arr[i + 1]];
+    steps.push({
+      type: 'swap',
+      arr: [...arr],
+      compare: [i + 1, right],
+      sorted: []
+    });
+    return i + 1;
+  }
+    
   // ─── STEP 3: Draw the bars ────────────────────────────────
   // arr      = the current array values
   // comparing = indices [j, j+1] being highlighted yellow or red
   // sorted   = indices that are green (done)
   // isSwap   = true if the highlight should be red (swap), false = yellow (compare)
-  function drawBars(arr, comparing, sorted, isSwap) {
+  function drawBars(arr, comparing, sorted, isSwap, pivotIndex) {
     const vizBox = document.getElementById('vizBox');
     vizBox.innerHTML = '';  // clear old bars
 
@@ -364,7 +386,10 @@
       } else if (comparing.includes(index)) {
         bar.style.backgroundColor = isSwap ? 'red' : 'yellow';  // active pair
         bar.style.color = '#000';
-      } else {
+      } else if(index == pivotIndex){
+        bar.style.backgroundColor = '#f0f';
+      }
+      else {
         bar.style.backgroundColor = '#0ff';        // default cyan
       }
 
@@ -381,10 +406,8 @@
     stepIdx++;
 
     let isSwap = step.type === 'swap';
-
-    // Update the bars to reflect this step
-    drawBars(step.arr, step.compare, step.sorted, isSwap);
-
+    let pivot = step.type === 'pivot' ? step.compare[0] : step.pivot ?? -1;
+    drawBars(step.arr, step.compare, step.sorted, isSwap, pivot);
     // Update the status message
     if (step.type === 'compare') {
       document.getElementById('status').textContent =
@@ -392,6 +415,9 @@
     } else if (step.type === 'swap') {
       document.getElementById('status').textContent =
         `Swapped! ${step.arr[step.compare[0]]} and ${step.arr[step.compare[1]]}`;
+    } else if (step.type === 'pivot') {
+      document.getElementById('status').textContent = 
+        `Pivot selected: ${step.arr[step.compare[0]]} at index ${step.compare[0]}`;
     } else {
       document.getElementById('status').textContent = '✅ Sorted!';
       clearInterval(autoTimer);

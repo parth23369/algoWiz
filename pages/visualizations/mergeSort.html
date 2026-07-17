@@ -186,21 +186,49 @@
     <pre><code>function mergeSort(arr) {
   let n = arr.length;
 
-  // outer loop: n-1 passes
-  for (let i = 0; i &lt; n - 1; i++) {
+  // base case
+  if (n <= 1) return arr;
 
-    // inner loop: compare neighbours
-    for (let j = 0; j &lt; n - 1 - i; j++) {
+  // split array
+  let mid = Math.floor(n / 2);
+  let left = arr.slice(0, mid);
+  let right = arr.slice(mid, n);
 
-      // if left > right → swap
-      if (arr[j] &gt; arr[j + 1]) {
-        let temp  = arr[j];
-        arr[j]    = arr[j + 1];
-        arr[j + 1] = temp;
-      }
+  // recursive sort
+  left = mergeSort(left);
+  right = mergeSort(right);
+
+  // merge sorted halves
+  return merge(left, right);
+}
+
+function merge(left, right) {
+  let result = [];
+  let i = 0, j = 0;
+
+  // compare and merge
+  while (i < left.length && j < right.length) {
+    if (left[i] < right[j]) {
+      result.push(left[i]);
+      i++;
+    } else {
+      result.push(right[j]);
+      j++;
     }
   }
-  return arr; <!--make changes to this code text-->
+
+  // add remaining elements
+  while (i < left.length) {
+    result.push(left[i]);
+    i++;
+  }
+
+  while (j < right.length) {
+    result.push(right[j]);
+    j++;
+  }
+
+  return result;
 }</code></pre>
   </div>
 </div>
@@ -222,33 +250,35 @@
 
   <h2>Step by step</h2>
   <ul>
-    <li>Start at index 0. Compare arr[0] and arr[1].</li>
-    <li>If arr[0] &gt; arr[1] → swap them.</li>
-    <li>Move to index 1. Compare arr[1] and arr[2]. And so on.</li>
-    <li>After one full pass, the <span class="highlight">largest element is at the end</span> — it's sorted.</li>
-    <li>Repeat for the remaining n−1 elements, then n−2, and so on.</li>
-    <li>Stop when no swaps happen in a pass — array is sorted.</li>
+    <li>Divide the array into two halves from the middle.</li>
+    <li>Keep dividing each half recursively until each subarray has only one element.</li>
+    <li>Single-element arrays are already sorted.</li>
+    <li>Start merging: compare elements from the left and right subarrays.</li>
+    <li>Pick the smaller element and place it into a new sorted array.</li>
+    <li>Continue until all elements from both halves are merged.</li>
+    <li>Repeat merging step-by-step to build larger sorted arrays.</li>
+    <li>Finally, the entire array becomes <span class="highlight">fully sorted</span>.</li>
   </ul>
 
   <h2>Complexity</h2>
   <p>
-    Time: <span class="highlight">O(n²)</span> — two nested loops, each running up to n times.<br/>
-    Space: <span class="highlight">O(1)</span> — sorting happens in-place, no extra array needed.<br/>
-    Stable: <span class="highlight">Yes</span> — equal elements never swap past each other.
+    Time: <span class="highlight">O(n log n)</span> — array is divided (log n levels) and merged (n work per level).<br/>
+    Space: <span class="highlight">O(n)</span> — extra space is needed for merging subarrays.<br/>
+    Stable: <span class="highlight">Yes</span> — equal elements keep their relative order.
   </p>
 
   <h2>When is it used?</h2>
   <p>
-    Almost never in production — it's too slow for large data. But it's the best algorithm
-    to <em>teach</em> sorting because the logic is completely transparent: you can watch
-    every comparison and every swap happen, step by step.
+    Used when <span class="highlight">stable sorting</span> is required or when dealing with large datasets.
+    It performs consistently well regardless of input order and is commonly used in
+    <em>external sorting</em> (like sorting data from files).
   </p>
 
   <h2>Compared to other sorts</h2>
   <ul>
-    <li><span class="highlight">Merge Sort:</span> O(n log n) — much faster, but uses O(n) extra space</li>
-    <li><span class="highlight">Quick Sort:</span> O(n log n) average — in-place but not stable</li>
-    <li><span class="highlight">Bubble Sort:</span> O(n²) — slow, but simple and educational</li>
+    <li><span class="highlight">Merge Sort:</span> O(n log n) — stable, but uses extra space</li>
+    <li><span class="highlight">Quick Sort:</span> O(n log n) average — faster in practice, in-place but not stable</li>
+    <li><span class="highlight">Bubble Sort:</span> O(n²) — much slower, mainly for learning purposes</li>
   </ul>
 </div>
 
@@ -269,7 +299,7 @@
 
     // Make 8 random numbers between 10 and 99
     array = [];
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 20; i++){
       array.push(Math.floor(Math.random() * 90) + 10);
     }
 
@@ -292,50 +322,63 @@
   // We simulate the full sort and record what happened at each moment.
   // This lets us play, pause, and step without re-running the sort logic.
   function computeSteps(arr) {
-    let log  = [];   // list of step objects we'll return
-    let n    = arr.length;
-    let sortedIndices = new Set();  // indices that are fully in place
-
-    for (let i = 0; i < n - 1; i++) {
-      for (let j = 0; j < n - 1 - i; j++) {
-
-        // Record: "we are comparing j and j+1"
-        log.push({
-          type:    'compare',
-          arr:     [...arr],          // snapshot of the array RIGHT NOW
-          compare: [j, j + 1],       // which two bars are yellow
-          sorted:  [...sortedIndices]
-        });
-
-        if (arr[j] > arr[j + 1]) {
-          // Swap in our simulation array
-          let temp   = arr[j];
-          arr[j]     = arr[j + 1];
-          arr[j + 1] = temp;
-
-          // Record: "we swapped j and j+1"
-          log.push({
-            type:    'swap',
-            arr:     [...arr],
-            compare: [j, j + 1],     // these two bars turn red during swap
-            sorted:  [...sortedIndices]
-          });
-        }
-      }
-      // After each pass, the element at position (n-1-i) is in its final place
-      sortedIndices.add(n - 1 - i);
-    }
-    sortedIndices.add(0);  // last remaining element is also sorted
-
-    // Final step: show the fully sorted array, all green
-    log.push({
-      type:    'done',
-      arr:     [...arr],
+    let steps = [];
+    let work = [...arr];
+    mergeSort(work, 0, arr.length - 1, steps);
+    steps.push({
+      type: 'done',
+      arr: [...work],
       compare: [],
-      sorted:  [...Array(n).keys()]  // [0,1,2,3,4,5,6,7]
+      sorted: [...Array(arr.length).keys()]
     });
+    // add a final 'done' step like bubble sort had
+    return steps;
+  }
 
-    return log;
+  function mergeSort(arr, left, right, steps) {
+    if (left >= right) return;
+    let mid = Math.floor((left + right) / 2);
+    mergeSort(arr, left, mid, steps);       // sort left half
+    mergeSort(arr, mid + 1, right, steps);  // sort right half
+    merge(arr, left, mid, right, steps);    // merge them together
+  }
+
+  function merge(arr, left, mid, right, steps) {
+    let temp = [];
+    let i = left, j = mid + 1;
+
+    while (i <= mid && j <= right) {
+      steps.push({
+        type: 'compare',
+        arr: [...arr],
+        compare: [i, j],
+        sorted: []
+      });
+
+      if (arr[i] <= arr[j]) {
+        temp.push(arr[i]);
+        i++;
+      } else {
+        temp.push(arr[j]);
+        j++;
+      }
+    }
+
+    // these two are OUTSIDE the main loop
+    while (i <= mid) { temp.push(arr[i]); i++; }
+    while (j <= right) { temp.push(arr[j]); j++; }
+
+    // now copy temp back into arr and push a snapshot
+    for (let k = 0; k < temp.length; k++) {
+      arr[left + k] = temp[k];
+    }
+
+    steps.push({
+      type: 'merge',
+      arr: [...arr],
+      compare: [],
+      sorted: []
+    });
   }
 
   // ─── STEP 3: Draw the bars ────────────────────────────────
@@ -387,10 +430,9 @@
     if (step.type === 'compare') {
       document.getElementById('status').textContent =
         `Comparing index ${step.compare[0]} (${step.arr[step.compare[0]]}) and ${step.compare[1]} (${step.arr[step.compare[1]]})`;
-    } else if (step.type === 'swap') {
-      document.getElementById('status').textContent =
-        `Swapped! ${step.arr[step.compare[0]]} and ${step.arr[step.compare[1]]}`;
-    } else {
+    } else if (step.type === 'merge') {
+      document.getElementById('status').textContent = `Merged a subarray`;
+    } else if (step.type === 'done') {
       document.getElementById('status').textContent = '✅ Sorted!';
       clearInterval(autoTimer);
       autoTimer = null;

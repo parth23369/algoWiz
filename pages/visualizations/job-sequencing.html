@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Job Sequencing with Deadlines - Greedy</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet"/>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Orbitron',sans-serif; background:#000; color:white; display:flex; height:100vh; overflow:hidden; }
+  .left-panel { width:33%; min-width:250px; background:#111; border-right:2px solid #0ff3; padding:2rem; overflow-y:auto; }
+  .left-panel h2 { color:#0ff; margin-bottom:1.5rem; font-size:1.8rem; }
+  .tree-container { background:#1a1a1a; border:2px solid #0ff3; border-radius:10px; height:280px; margin-bottom:1rem; overflow:auto; padding:12px; }
+  .row-label { font-size:0.65rem; color:#0ff8; margin-bottom:6px; }
+  .job-card { border:2px solid #0ff; border-radius:8px; padding:0.4rem 0.6rem; margin-bottom:6px; font-size:0.7rem; color:#0ff; background:#0ff1; transition:all 0.3s ease; }
+  .job-card.visiting  { border-color:gold;   color:gold;   background:#ffd7001a; }
+  .job-card.scheduled { border-color:#0f0;   color:#0f0;   background:#00ff001a; }
+  .job-card.rejected  { border-color:#e24b4a; color:#e24b4a; background:#e24b4a1a; opacity:0.7; }
+  .slots-row { display:flex; gap:4px; margin-top:12px; flex-wrap:wrap; }
+  .slot { min-width:44px; height:40px; border:2px solid #0ff; border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:0.6rem; color:#0ff5; background:#0ff05; transition:all 0.3s ease; }
+  .slot.checking { border-color:gold; background:#ffd7001a; }
+  .slot.filled { border-color:#0f0; color:#0f0; background:#00ff001a; }
+  .controls { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:1rem; }
+  .btn { background:#0ff3; padding:0.6rem 1rem; border:none; border-radius:8px; cursor:pointer; color:black; font-family:'Orbitron',sans-serif; font-size:0.8rem; transition:background 0.3s; }
+  .btn:hover { background:#0ff; }
+  .btn:disabled { opacity:0.3; cursor:not-allowed; }
+  .speed-row { display:flex; align-items:center; gap:8px; margin-bottom:1.2rem; font-size:0.75rem; color:#0ff; }
+  input[type=range] { flex:1; accent-color:#0ff; }
+  #status { font-size:0.75rem; color:#0ff; min-height:1.2rem; margin-bottom:1rem; text-align:center; }
+  .code-block h3 { color:#0ff; margin-bottom:0.5rem; font-size:1.2rem; }
+  pre { background:#000; padding:1rem; border-radius:8px; border:1px solid #0ff3; color:#0ff; overflow-x:auto; font-size:0.8rem; line-height:1.4rem; }
+  #divider { width:6px; background:#0ff3; cursor:col-resize; flex-shrink:0; }
+  #divider:hover { background:#0ff; }
+  .right-panel { flex:1; min-width:250px; padding:2rem; overflow-y:auto; }
+  .right-panel h1 { color:#0ff; font-size:2rem; margin-bottom:1rem; }
+  .right-panel p { font-size:1rem; color:#ccc; line-height:1.7; margin-bottom:1.2rem; }
+  .right-panel h2 { color:#0ff; font-size:1.3rem; margin:1.5rem 0 0.5rem; }
+  .right-panel ul { margin-left:1.2rem; color:#ccc; line-height:1.8; }
+  .highlight { color:#0ff; font-weight:bold; }
+  .legend { display:flex; gap:1.5rem; flex-wrap:wrap; margin-bottom:1.5rem; font-size:0.75rem; color:#ccc; }
+  .legend-item { display:flex; align-items:center; gap:6px; }
+  .legend-dot { width:14px; height:14px; border-radius:4px; border:2px solid; }
+</style>
+</head>
+<body>
+
+<div class="left-panel">
+  <h2>Job Sequencing with Deadlines</h2>
+
+  <div class="tree-container" id="treeContainer">
+    <div class="row-label">Jobs, sorted by profit (highest first)</div>
+    <div id="jobsList"></div>
+    <div class="row-label">Time slots (1 slot per unit time, up to max deadline)</div>
+    <div class="slots-row" id="slotsRow"></div>
+  </div>
+
+  <div id="status">Press "New Jobs" to start</div>
+
+  <div class="controls">
+    <button class="btn" id="newBtn"   onclick="generateJobs()">New Jobs</button>
+    <button class="btn" id="sortBtn"  onclick="startRun()" disabled>Run ▶</button>
+    <button class="btn" id="stepBtn"  onclick="doStep()"    disabled>Step</button>
+    <button class="btn" id="resetBtn" onclick="resetRun()"  disabled>Reset</button>
+  </div>
+
+  <div class="speed-row">
+    <span>Slow</span>
+    <input type="range" id="speedSlider" min="100" max="1000" value="450" step="50"/>
+    <span>Fast</span>
+  </div>
+
+  <div class="code-block">
+    <h3>Greedy Code</h3>
+    <pre><code>function jobSequencing(jobs) {
+  // Greedy: sort by profit, descending
+  jobs.sort((a, b) => b.profit - a.profit);
+
+  const maxDeadline = Math.max(...jobs.map(j => j.deadline));
+  const slots = new Array(maxDeadline + 1).fill(null);
+  let totalProfit = 0;
+
+  for (const job of jobs) {
+    // try the latest free slot at or before this job's deadline
+    for (let t = Math.min(maxDeadline, job.deadline); t >= 1; t--) {
+      if (slots[t] === null) {
+        slots[t] = job.id;
+        totalProfit += job.profit;
+        break;
+      }
+    }
+  }
+
+  return { slots, totalProfit };
+}</code></pre>
+  </div>
+</div>
+
+<div id="divider"></div>
+
+<div class="right-panel">
+  <h1>How Job Sequencing Works</h1>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="border-color:gold"></div>Currently placing / checking slot</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#0f0"></div>Scheduled</div>
+    <div class="legend-item"><div class="legend-dot" style="border-color:#e24b4a"></div>Rejected — no slot available</div>
+  </div>
+
+  <p>
+    Each job takes exactly one unit of time and earns a profit only if completed by its deadline. You want to pick and schedule jobs to maximize total profit, and only one job can occupy any given time slot. The greedy trick: always consider the most profitable job first, and give it the latest possible slot it can still make.
+  </p>
+
+  <h2>Step by step</h2>
+  <ul>
+    <li>Sort all jobs by <span class="highlight">profit</span>, descending.</li>
+    <li>For each job (most profitable first), scan backward from its deadline toward slot 1, looking for a free slot.</li>
+    <li>If a free slot is found, assign the job there — mark <span class="highlight">scheduled</span> (green).</li>
+    <li>If every slot up to its deadline is already taken, the job can't be completed in time — mark <span class="highlight">rejected</span> (red).</li>
+    <li>Total profit is the sum of all scheduled jobs' profits.</li>
+  </ul>
+
+  <h2>Why the latest free slot?</h2>
+  <p>
+    Placing a job as late as possible (rather than as early as possible) preserves earlier, more flexible slots for other jobs with tighter deadlines — an exchange argument shows this never costs you profit and can only help fit in more jobs.
+  </p>
+
+  <h2>Complexity</h2>
+  <p>
+    Time: <span class="highlight">O(n log n + n·d)</span> — sorting plus, for each job, scanning up to d slots (d = max deadline). A disjoint-set/union-find version brings the slot search down to near O(n α(n)).<br/>
+    Space: <span class="highlight">O(d)</span> for the slot array.
+  </p>
+
+  <h2>When is it used?</h2>
+  <ul>
+    <li>Single-machine scheduling with deadlines and profits/penalties.</li>
+    <li>Task prioritization systems where late completion earns nothing.</li>
+    <li>Foundational example for weighted interval scheduling variants.</li>
+  </ul>
+
+  <h2>Compared to other approaches</h2>
+  <ul>
+    <li><span class="highlight">Greedy (this):</span> sort by profit, always take the latest available slot — optimal and efficient.</li>
+    <li><span class="highlight">Sort by deadline instead:</span> doesn't maximize profit directly — you'd need extra bookkeeping (e.g. a min-heap of scheduled profits to evict later) to match the profit-first greedy's guarantee.</li>
+    <li><span class="highlight">Brute force:</span> O(2ⁿ) — tries every subset of jobs and every valid ordering; infeasible beyond small n.</li>
+  </ul>
+</div>
+
+<script>
+let jobs = [];
+let maxDeadline = 0;
+let jobEls = [], slotEls = [];
+let steps = [], stepIdx = 0, autoTimer = null;
+
+function generateJobs() {
+  clearTimer();
+  const count = 6;
+  const raw = [];
+  for (let i = 0; i < count; i++) {
+    raw.push({ id:i, deadline: Math.floor(Math.random()*4)+1, profit: Math.floor(Math.random()*90)+10 });
+  }
+  raw.sort((a,b) => b.profit - a.profit);
+  jobs = raw;
+  maxDeadline = Math.max(...jobs.map(j => j.deadline));
+
+  drawJobs();
+  drawSlots();
+  steps = computeSteps();
+  stepIdx = 0;
+  document.getElementById('sortBtn').disabled = false;
+  document.getElementById('stepBtn').disabled = false;
+  document.getElementById('resetBtn').disabled = false;
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  setStatus(`${jobs.length} jobs, max deadline ${maxDeadline}. ${steps.length} steps.`);
+}
+
+function drawJobs() {
+  const list = document.getElementById('jobsList');
+  list.innerHTML = '';
+  jobEls = [];
+  jobs.forEach(j => {
+    const card = document.createElement('div');
+    card.className = 'job-card';
+    card.innerHTML = `Job ${j.id+1} — deadline:${j.deadline} profit:${j.profit}`;
+    list.appendChild(card);
+    jobEls.push(card);
+  });
+}
+
+function drawSlots() {
+  const row = document.getElementById('slotsRow');
+  row.innerHTML = '';
+  slotEls = [null];
+  for (let t = 1; t <= maxDeadline; t++) {
+    const s = document.createElement('div');
+    s.className = 'slot';
+    s.innerHTML = `t=${t}<br/>—`;
+    row.appendChild(s);
+    slotEls[t] = s;
+  }
+}
+
+function computeSteps() {
+  const slots = new Array(maxDeadline+1).fill(null);
+  const steps = [];
+  let totalProfit = 0;
+
+  for (const job of jobs) {
+    steps.push({type:'visitJob', id: job.id});
+    let placed = false;
+    for (let t = Math.min(maxDeadline, job.deadline); t >= 1; t--) {
+      steps.push({type:'checkSlot', t});
+      if (slots[t] === null) {
+        slots[t] = job.id;
+        totalProfit += job.profit;
+        steps.push({type:'place', t, id: job.id, profit: job.profit, total: totalProfit});
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) steps.push({type:'reject', id: job.id});
+  }
+
+  steps.push({type:'finish', total: totalProfit});
+  return steps;
+}
+
+function doStep() {
+  if (stepIdx >= steps.length) return;
+  const s = steps[stepIdx++];
+
+  if (s.type === 'visitJob') {
+    jobEls[s.id].classList.add('visiting');
+    setStatus(`Considering Job ${s.id+1}…`);
+  } else if (s.type === 'checkSlot') {
+    slotEls.forEach((el,i) => { if (el && !el.classList.contains('filled')) el.classList.remove('checking'); });
+    slotEls[s.t].classList.add('checking');
+    setStatus(`Checking slot t=${s.t}…`);
+  } else if (s.type === 'place') {
+    jobEls[s.id].classList.remove('visiting');
+    jobEls[s.id].classList.add('scheduled');
+    const slot = slotEls[s.t];
+    slot.classList.remove('checking');
+    slot.classList.add('filled');
+    slot.innerHTML = `t=${s.t}<br/>J${s.id+1}`;
+    setStatus(`Job ${s.id+1} scheduled at t=${s.t}. Total profit = ${s.total}`);
+  } else if (s.type === 'reject') {
+    jobEls[s.id].classList.remove('visiting');
+    jobEls[s.id].classList.add('rejected');
+    slotEls.forEach((el) => { if (el && !el.classList.contains('filled')) el.classList.remove('checking'); });
+    setStatus(`Job ${s.id+1} rejected — no free slot before its deadline.`);
+  } else if (s.type === 'finish') {
+    setStatus(`✅ Total profit = ${s.total}.`);
+    clearTimer();
+    document.getElementById('sortBtn').textContent = 'Run ▶';
+  }
+}
+
+function startRun() {
+  if (autoTimer) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+  if (stepIdx >= steps.length) return;
+  document.getElementById('sortBtn').textContent = 'Pause ⏸';
+  const delay = 1100 - parseInt(document.getElementById('speedSlider').value);
+  autoTimer = setInterval(() => {
+    if (stepIdx >= steps.length) { clearTimer(); document.getElementById('sortBtn').textContent = 'Run ▶'; return; }
+    doStep();
+  }, delay);
+}
+
+function resetRun() {
+  clearTimer();
+  document.getElementById('sortBtn').textContent = 'Run ▶';
+  drawJobs();
+  drawSlots();
+  steps = computeSteps();
+  stepIdx = 0;
+  setStatus(`Reset. ${steps.length} steps.`);
+}
+
+function setStatus(msg) { document.getElementById('status').textContent = msg; }
+function clearTimer() { clearInterval(autoTimer); autoTimer = null; }
+
+const divider = document.getElementById('divider');
+const leftPanel = document.querySelector('.left-panel');
+let isDragging = false;
+divider.addEventListener('mousedown', () => { isDragging = true; document.body.style.userSelect = 'none'; });
+document.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  const w = e.clientX;
+  if (w < 250 || w > window.innerWidth - 250) return;
+  leftPanel.style.width = w + 'px';
+});
+document.addEventListener('mouseup', () => { isDragging = false; document.body.style.userSelect = 'auto'; });
+</script>
+</body>
+</html>
