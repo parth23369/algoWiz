@@ -67,6 +67,25 @@
   .rec-log   { color:#0ff; }
   .rec-done  { color:#0f0; font-weight:bold; }
 
+  /* Memory renderer */
+  #memoryView { display:flex; gap:14px; flex-wrap:wrap; align-items:flex-start; }
+  .mem-column { flex:1; min-width:220px; }
+  .mem-column-label { font-size:0.68rem; color:#0ff8; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; }
+  .stack-frame { border:2px solid #0ff; border-radius:8px; padding:0.6rem 0.7rem; margin-bottom:8px; background:#0ff08; }
+  .stack-frame.top-frame { border-color:gold; background:#ffd70012; }
+  .stack-frame .frame-title { font-size:0.78rem; color:#0ff; font-weight:bold; margin-bottom:4px; }
+  .stack-frame.top-frame .frame-title { color:gold; }
+  .stack-frame table { width:100%; border-collapse:collapse; font-size:0.72rem; }
+  .stack-frame td { padding:2px 4px; color:#ccc; }
+  .stack-frame td.var-name { color:#0ff; width:40%; }
+  .stack-frame td.var-name.is-ptr { color:#f0f; }
+  .heap-block { border:2px solid #0f0; border-radius:8px; padding:0.5rem 0.7rem; margin-bottom:8px; background:#00ff0010; font-size:0.72rem; color:#0f0; }
+  .heap-block .heap-addr { font-weight:bold; }
+  #memoryStatusLine { font-size:0.72rem; color:#0ff8; margin-bottom:10px; min-height:1rem; }
+  .backend-status { font-size:0.68rem; margin-top:0.4rem; }
+  .backend-status.ok { color:#0f0; }
+  .backend-status.bad { color:#e24b4a; }
+
   .api-box h2 { color:#0ff; font-size:1.1rem; margin:1.2rem 0 0.5rem; }
   .api-box p { font-size:0.85rem; color:#ccc; line-height:1.6; margin-bottom:0.8rem; }
   .api-box ul { margin-left:1.1rem; color:#ccc; line-height:1.7; font-size:0.85rem; }
@@ -85,6 +104,7 @@
     <option value="graph">Graph (nodes &amp; edges)</option>
     <option value="grid">Grid (2D / DP table)</option>
     <option value="recursion">Recursion (call tree log)</option>
+    <option value="memory">C / Memory (real gdb backend)</option>
   </select>
 
   <div id="arrayInputs">
@@ -119,12 +139,25 @@ D E 3</textarea>
     <input type="text" id="recursionInput" value="6"/>
   </div>
 
-  <label>Your code (must define a <code>run(input, viz)</code> function)</label>
-  <textarea id="codeEditor"></textarea>
+  <div id="memoryInputs" style="display:none;">
+    <label>Backend URL (your running <code>app.py</code>)</label>
+    <input type="text" id="backendUrlInput" value="http://localhost:5001"/>
+    <div id="backendStatus" class="backend-status"></div>
+  </div>
+
+  <div id="genericCodeSection">
+    <label>Your code (must define a <code>run(input, viz)</code> function)</label>
+    <textarea id="codeEditor"></textarea>
+  </div>
+
+  <div id="cCodeSection" style="display:none;">
+    <label>C source (real, unmodified — no viz.* calls needed)</label>
+    <textarea id="cCodeEditor" style="font-family:'Courier New',monospace; font-size:0.78rem; height:220px; line-height:1.4rem; color:#0f0; background:#050505;"></textarea>
+  </div>
 
   <div class="controls">
     <button class="btn secondary" onclick="loadExample()">Load Example</button>
-    <button class="btn" onclick="runCode()">Run ▶</button>
+    <button class="btn" id="runBtn" onclick="handleRunClick()">Run ▶</button>
   </div>
   <div class="controls">
     <button class="btn" id="playBtn"  onclick="startPlay()" disabled>Play ▶</button>
@@ -150,6 +183,17 @@ D E 3</textarea>
     <svg id="graphSVG" style="display:none;"></svg>
     <div id="gridGrid" style="display:none;"></div>
     <div id="recursionLog" style="display:none;"></div>
+    <div id="memoryView" style="display:none;">
+      <div id="memoryStatusLine"></div>
+      <div class="mem-column">
+        <div class="mem-column-label">Call stack (innermost frame highlighted)</div>
+        <div id="stackRegion"></div>
+      </div>
+      <div class="mem-column">
+        <div class="mem-column-label">Heap</div>
+        <div id="heapRegion"></div>
+      </div>
+    </div>
   </div>
 
   <div class="api-box" id="apiBox"></div>
@@ -208,6 +252,16 @@ const API_DOCS = {
       <li><code>viz.exit(label)</code> — logs a line (green) and un-indents</li>
       <li><code>viz.log(message)</code> — logs a line (cyan) at the current indent level</li>
       <li><code>viz.done()</code></li>
+    </ul>`,
+  memory: `
+    <h2>C / Memory API</h2>
+    <p>This type is fundamentally different from the other four: there is no <code>viz.*</code> API and no <code>run(input, viz)</code> function to write. Paste real, unmodified C. It gets compiled with <code>gcc -g -O0</code> and single-stepped through an actual <code>gdb</code> session running on a backend server — the trace reflects what your code <em>actually does</em>, not what it reports about itself.</p>
+    <p>Each step shows the real call stack (function, current line, and live local variable values per frame) and a live heap map built by intercepting <code>malloc</code>/<code>free</code> calls made directly from your code.</p>
+    <ul>
+      <li>Requires <code>app.py</code> running somewhere reachable (see the trace_backend README) — point <b>Backend URL</b> at it.</li>
+      <li>The backend runs your code inside a sandbox (namespace isolation, dropped privileges, resource limits, and a hard wall-clock ceiling) — but treat this as a demo/personal-project sandbox, not a hardened public service.</li>
+      <li>Recursive calls show up as growing/shrinking stack depth automatically — no annotation needed.</li>
+      <li>Pointer variables are cross-referenced against the heap map automatically; a pointer whose value matches a live heap block is marked.</li>
     </ul>`
 };
 
@@ -290,6 +344,33 @@ const EXAMPLES = {
   viz.log(\`Final answer: \${answer}\`);
   viz.done();
 }`
+  },
+  memory: {
+    backendUrl: 'http://localhost:5001',
+    code: `#include <stdio.h>
+#include <stdlib.h>
+
+int factorial(int n) {
+    if (n <= 1) return 1;
+    return n * factorial(n - 1);
+}
+
+int main() {
+    int a = 5;
+    int b = 10;
+    int sum = a + b;
+
+    int *arr = malloc(3 * sizeof(int));
+    arr[0] = 1;
+    arr[1] = 2;
+    arr[2] = 3;
+
+    int fact = factorial(4);
+
+    free(arr);
+    printf("sum=%d fact=%d\\n", sum, fact);
+    return 0;
+}`
   }
 };
 
@@ -302,11 +383,17 @@ function switchType() {
   document.getElementById('graphInputs').style.display     = currentType === 'graph'     ? 'block' : 'none';
   document.getElementById('gridInputs').style.display      = currentType === 'grid'      ? 'block' : 'none';
   document.getElementById('recursionInputs').style.display = currentType === 'recursion' ? 'block' : 'none';
+  document.getElementById('memoryInputs').style.display    = currentType === 'memory'    ? 'block' : 'none';
+
+  document.getElementById('genericCodeSection').style.display = currentType === 'memory' ? 'none' : 'block';
+  document.getElementById('cCodeSection').style.display       = currentType === 'memory' ? 'block' : 'none';
+  document.getElementById('runBtn').textContent = currentType === 'memory' ? 'Compile & Trace ▶' : 'Run ▶';
 
   document.getElementById('barsRow').style.display      = currentType === 'array'     ? 'flex' : 'none';
   document.getElementById('graphSVG').style.display     = currentType === 'graph'     ? 'block' : 'none';
   document.getElementById('gridGrid').style.display      = currentType === 'grid'      ? 'inline-grid' : 'none';
   document.getElementById('recursionLog').style.display = currentType === 'recursion' ? 'block' : 'none';
+  document.getElementById('memoryView').style.display    = currentType === 'memory'    ? 'flex' : 'none';
 
   document.getElementById('apiBox').innerHTML = API_DOCS[currentType];
   loadExample();
@@ -315,19 +402,25 @@ function switchType() {
 
 function loadExample() {
   const ex = EXAMPLES[currentType];
-  document.getElementById('codeEditor').value = ex.code;
   if (currentType === 'array') {
+    document.getElementById('codeEditor').value = ex.code;
     document.getElementById('arrayInput').value = ex.input;
   } else if (currentType === 'graph') {
+    document.getElementById('codeEditor').value = ex.code;
     document.getElementById('nodesInput').value = ex.nodes;
     document.getElementById('edgesInput').value = ex.edges;
     document.getElementById('startNodeInput').value = ex.start;
   } else if (currentType === 'grid') {
+    document.getElementById('codeEditor').value = ex.code;
     document.getElementById('gridRows').value = ex.rows;
     document.getElementById('gridCols').value = ex.cols;
     document.getElementById('gridValues').value = ex.values;
   } else if (currentType === 'recursion') {
+    document.getElementById('codeEditor').value = ex.code;
     document.getElementById('recursionInput').value = ex.input;
+  } else if (currentType === 'memory') {
+    document.getElementById('cCodeEditor').value = ex.code;
+    document.getElementById('backendUrlInput').value = ex.backendUrl;
   }
 }
 
@@ -338,11 +431,18 @@ function clearAll() {
   document.getElementById('stepBtn').disabled = true;
   document.getElementById('resetBtn').disabled = true;
   document.getElementById('errorBox').textContent = '';
-  document.getElementById('statusBox').textContent = 'Write or load code, then press Run.';
+  document.getElementById('statusBox').textContent = currentType === 'memory'
+    ? 'Write or load C code, point at your backend, then press Compile & Trace.'
+    : 'Write or load code, then press Run.';
+  document.getElementById('backendStatus').textContent = '';
+  document.getElementById('backendStatus').className = 'backend-status';
   document.getElementById('barsRow').innerHTML = '';
   document.getElementById('graphSVG').innerHTML = '';
   document.getElementById('gridGrid').innerHTML = '';
   document.getElementById('recursionLog').innerHTML = '';
+  document.getElementById('stackRegion').innerHTML = '';
+  document.getElementById('heapRegion').innerHTML = '';
+  document.getElementById('memoryStatusLine').textContent = '';
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -466,6 +566,80 @@ function makeRecursionViz() {
 // ─────────────────────────────────────────────────────────────
 //  RUN
 // ─────────────────────────────────────────────────────────────
+function handleRunClick() {
+  if (currentType === 'memory') runMemoryCode();
+  else runCode();
+}
+
+async function runMemoryCode() {
+  clearTimer();
+  steps = []; stepIdx = 0;
+  document.getElementById('errorBox').textContent = '';
+  document.getElementById('stackRegion').innerHTML = '';
+  document.getElementById('heapRegion').innerHTML = '';
+
+  const code = document.getElementById('cCodeEditor').value;
+  const backendUrl = document.getElementById('backendUrlInput').value.trim().replace(/\/$/, '');
+  const backendStatus = document.getElementById('backendStatus');
+  const runBtn = document.getElementById('runBtn');
+
+  if (!code.trim()) {
+    document.getElementById('errorBox').textContent = 'Error: no C code to run.';
+    return;
+  }
+
+  runBtn.disabled = true;
+  runBtn.textContent = 'Compiling & tracing…';
+  document.getElementById('statusBox').textContent = 'Sending to backend — compiling with gcc, then tracing with gdb…';
+  backendStatus.textContent = '';
+  backendStatus.className = 'backend-status';
+
+  let data;
+  try {
+    const resp = await fetch(`${backendUrl}/run`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code })
+    });
+    data = await resp.json();
+  } catch (err) {
+    runBtn.disabled = false;
+    runBtn.textContent = 'Compile & Trace ▶';
+    backendStatus.textContent = `Could not reach backend at ${backendUrl} — is app.py running? (${err.message})`;
+    backendStatus.className = 'backend-status bad';
+    document.getElementById('statusBox').textContent = 'Backend unreachable.';
+    return;
+  }
+
+  runBtn.disabled = false;
+  runBtn.textContent = 'Compile & Trace ▶';
+
+  if (!data.ok) {
+    document.getElementById('errorBox').textContent =
+      data.error === 'compile_error' ? 'Compile error:\n' + data.detail :
+      data.error === 'timeout' ? 'Execution timed out on the backend (possible infinite loop): ' + data.detail :
+      'Error: ' + (data.detail || data.error || 'unknown error');
+    document.getElementById('statusBox').textContent = 'Fix the issue above and try again.';
+    return;
+  }
+
+  backendStatus.textContent = '✅ Backend reachable and trace succeeded.';
+  backendStatus.className = 'backend-status ok';
+
+  steps = data.steps.map(s => ({ ...s, type: 'memory' }));
+  stepIdx = 0;
+  initialRenderFn = () => renderMemoryStep({ stack: [], heap: [], message: 'Ready — press Step or Play to begin.' });
+  if (initialRenderFn) initialRenderFn();
+
+  document.getElementById('statusBox').textContent = data.truncated
+    ? `⚠️ Stopped early — too many steps (possible infinite loop). Showing first ${steps.length} steps.`
+    : `${steps.length} step(s) recorded. Press Step or Play.`;
+
+  document.getElementById('playBtn').disabled  = steps.length === 0;
+  document.getElementById('stepBtn').disabled  = steps.length === 0;
+  document.getElementById('resetBtn').disabled = steps.length === 0;
+}
+
 function runCode() {
   clearTimer();
   steps = []; stepIdx = 0;
@@ -537,6 +711,7 @@ function doStep() {
   else if (step.type === 'graph') renderGraphStep(step, lastGraphInput);
   else if (step.type === 'grid') renderGridStep(step);
   else if (step.type === 'recursion') renderRecursionStep(step);
+  else if (step.type === 'memory') renderMemoryStep(step);
 
   document.getElementById('statusBox').textContent = step.message || `Step ${stepIdx}/${steps.length}`;
 
@@ -680,6 +855,77 @@ function renderRecursionStep(step) {
   line.textContent = prefix + step.text;
   log.appendChild(line);
   log.scrollTop = log.scrollHeight;
+}
+
+const MEM_PALETTE = ['#0ff', '#f0f', '#ff0', '#0f8', '#f80', '#8ff', '#f08'];
+
+function renderMemoryStep(step) {
+  document.getElementById('memoryStatusLine').textContent = step.message || '';
+
+  // Assign each live heap address a color so matching pointers can be
+  // visually linked to their heap block without needing to draw arrows
+  // across two separate DOM regions.
+  const heap = step.heap || [];
+  const addrColor = {};
+  heap.forEach((h, i) => { addrColor[h.addr] = MEM_PALETTE[i % MEM_PALETTE.length]; });
+
+  const stackRegion = document.getElementById('stackRegion');
+  stackRegion.innerHTML = '';
+  const userFrames = (step.stack || []).filter(f => f.is_user_code);
+
+  if (userFrames.length === 0) {
+    stackRegion.innerHTML = '<div style="color:#0ff6; font-size:0.75rem;">(no active user-code frame)</div>';
+  }
+
+  userFrames.forEach((frame, idx) => {
+    const div = document.createElement('div');
+    div.className = 'stack-frame' + (idx === 0 ? ' top-frame' : '');
+
+    const title = document.createElement('div');
+    title.className = 'frame-title';
+    title.textContent = `${frame.func}()  —  line ${frame.line ?? '?'}`;
+    div.appendChild(title);
+
+    const entries = Object.entries(frame.locals || {});
+    if (entries.length > 0) {
+      const table = document.createElement('table');
+      entries.forEach(([name, value]) => {
+        const row = document.createElement('tr');
+        const nameCell = document.createElement('td');
+        const valCell = document.createElement('td');
+
+        const matchedColor = value && addrColor[value.trim ? value.trim() : value];
+        nameCell.className = 'var-name' + (matchedColor ? ' is-ptr' : '');
+        nameCell.textContent = name;
+        valCell.textContent = value;
+        if (matchedColor) {
+          valCell.style.color = matchedColor;
+          valCell.style.fontWeight = 'bold';
+        }
+        row.appendChild(nameCell);
+        row.appendChild(valCell);
+        table.appendChild(row);
+      });
+      div.appendChild(table);
+    }
+    stackRegion.appendChild(div);
+  });
+
+  const heapRegion = document.getElementById('heapRegion');
+  heapRegion.innerHTML = '';
+  if (heap.length === 0) {
+    heapRegion.innerHTML = '<div style="color:#0ff6; font-size:0.75rem;">(empty)</div>';
+  }
+  heap.forEach(h => {
+    const div = document.createElement('div');
+    div.className = 'heap-block';
+    const color = addrColor[h.addr];
+    div.style.borderColor = color;
+    div.style.color = color;
+    div.style.background = color + '15';
+    div.innerHTML = `<span class="heap-addr">${h.addr}</span> — ${h.size} byte(s)`;
+    heapRegion.appendChild(div);
+  });
 }
 
 // ─────────────────────────────────────────────────────────────

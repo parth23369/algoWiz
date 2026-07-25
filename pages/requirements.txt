@@ -1,0 +1,4 @@
+pygdbmi>=0.11.0
+psutil>=5.9.0
+flask>=3.0.0
+flask-cors>=6.0.0
