@@ -1,0 +1,8 @@
+# Send only what the Dockerfile copies.
+*
+!pages/requirements.txt
+!pages/app.py
+!pages/sandbox_run.py
+!pages/sandboxed_worker.py
+!pages/trace_extractor.py
+!tests/test_tracer.py

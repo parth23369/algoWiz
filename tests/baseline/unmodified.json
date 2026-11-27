@@ -1,0 +1,1566 @@
+{
+ "normalised": {
+  "normal": {
+   "ok": true,
+   "steps": [
+    {
+     "heap": [],
+     "line": 4,
+     "message": "Program started.",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 4,
+       "locals": {
+        "a": "UNSET",
+        "b": "UNSET",
+        "sum": "UNSET"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 5,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "a": "5",
+        "b": "UNSET",
+        "sum": "UNSET"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 6,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 6,
+       "locals": {
+        "a": "5",
+        "b": "10",
+        "sum": "UNSET"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 7,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 7,
+       "locals": {
+        "a": "5",
+        "b": "10",
+        "sum": "15"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 8,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 8,
+       "locals": {
+        "a": "5",
+        "b": "10",
+        "sum": "15"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 9,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 9,
+       "locals": {
+        "a": "5",
+        "b": "10",
+        "sum": "15"
+       }
+      }
+     ]
+    }
+   ],
+   "truncated": false
+  },
+  "recursion": {
+   "ok": true,
+   "steps": [
+    {
+     "heap": [],
+     "line": 9,
+     "message": "Program started.",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 9,
+       "locals": {
+        "result": "UNSET"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 4,
+     "message": "",
+     "stack": [
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 4,
+       "locals": {
+        "n": "4"
+       }
+      },
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 9,
+       "locals": {
+        "result": "UNSET"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 5,
+     "message": "",
+     "stack": [
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "4"
+       }
+      },
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 9,
+       "locals": {
+        "result": "UNSET"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 4,
+     "message": "",
+     "stack": [
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 4,
+       "locals": {
+        "n": "3"
+       }
+      },
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "4"
+       }
+      },
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 9,
+       "locals": {
+        "result": "UNSET"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 5,
+     "message": "",
+     "stack": [
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "3"
+       }
+      },
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "4"
+       }
+      },
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 9,
+       "locals": {
+        "result": "UNSET"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 4,
+     "message": "",
+     "stack": [
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 4,
+       "locals": {
+        "n": "2"
+       }
+      },
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "3"
+       }
+      },
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "4"
+       }
+      },
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 9,
+       "locals": {
+        "result": "UNSET"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 5,
+     "message": "",
+     "stack": [
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "2"
+       }
+      },
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "3"
+       }
+      },
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "4"
+       }
+      },
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 9,
+       "locals": {
+        "result": "UNSET"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 4,
+     "message": "",
+     "stack": [
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 4,
+       "locals": {
+        "n": "1"
+       }
+      },
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "2"
+       }
+      },
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "3"
+       }
+      },
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "4"
+       }
+      },
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 9,
+       "locals": {
+        "result": "UNSET"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 6,
+     "message": "",
+     "stack": [
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 6,
+       "locals": {
+        "n": "1"
+       }
+      },
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "2"
+       }
+      },
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "3"
+       }
+      },
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "4"
+       }
+      },
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 9,
+       "locals": {
+        "result": "UNSET"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 6,
+     "message": "",
+     "stack": [
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 6,
+       "locals": {
+        "n": "2"
+       }
+      },
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "3"
+       }
+      },
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "4"
+       }
+      },
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 9,
+       "locals": {
+        "result": "UNSET"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 6,
+     "message": "",
+     "stack": [
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 6,
+       "locals": {
+        "n": "3"
+       }
+      },
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "4"
+       }
+      },
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 9,
+       "locals": {
+        "result": "UNSET"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 6,
+     "message": "",
+     "stack": [
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 6,
+       "locals": {
+        "n": "4"
+       }
+      },
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 9,
+       "locals": {
+        "result": "UNSET"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 10,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 10,
+       "locals": {
+        "result": "24"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 11,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 11,
+       "locals": {
+        "result": "24"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 12,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 12,
+       "locals": {
+        "result": "24"
+       }
+      }
+     ]
+    }
+   ],
+   "truncated": false
+  },
+  "malloc": {
+   "ok": true,
+   "steps": [
+    {
+     "heap": [],
+     "line": 5,
+     "message": "Program started.",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "arr": "UNSET",
+        "total": "UNSET"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [
+      {
+       "addr": "ADDR1",
+       "size": 12
+      }
+     ],
+     "line": 5,
+     "message": "malloc(12) -> ADDR1",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "arr": "UNSET",
+        "total": "UNSET"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [
+      {
+       "addr": "ADDR1",
+       "size": 12
+      }
+     ],
+     "line": 5,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "arr": "UNSET",
+        "total": "UNSET"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [
+      {
+       "addr": "ADDR1",
+       "size": 12
+      }
+     ],
+     "line": 6,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 6,
+       "locals": {
+        "arr": "ADDR1",
+        "total": "UNSET"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [
+      {
+       "addr": "ADDR1",
+       "size": 12
+      }
+     ],
+     "line": 7,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 7,
+       "locals": {
+        "arr": "ADDR1",
+        "total": "UNSET"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [
+      {
+       "addr": "ADDR1",
+       "size": 12
+      }
+     ],
+     "line": 8,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 8,
+       "locals": {
+        "arr": "ADDR1",
+        "total": "UNSET"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [
+      {
+       "addr": "ADDR1",
+       "size": 12
+      }
+     ],
+     "line": 9,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 9,
+       "locals": {
+        "arr": "ADDR1",
+        "total": "UNSET"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [
+      {
+       "addr": "ADDR1",
+       "size": 12
+      }
+     ],
+     "line": 10,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 10,
+       "locals": {
+        "arr": "ADDR1",
+        "total": "6"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 11,
+     "message": "free(ADDR1)",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 11,
+       "locals": {
+        "arr": "ADDR1",
+        "total": "6"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 11,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 11,
+       "locals": {
+        "arr": "ADDR1",
+        "total": "6"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 12,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 12,
+       "locals": {
+        "arr": "ADDR1",
+        "total": "6"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 13,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 13,
+       "locals": {
+        "arr": "ADDR1",
+        "total": "6"
+       }
+      }
+     ]
+    }
+   ],
+   "truncated": false
+  }
+ },
+ "raw": {
+  "normal": {
+   "ok": true,
+   "steps": [
+    {
+     "heap": [],
+     "line": 4,
+     "message": "Program started.",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 4,
+       "locals": {
+        "a": "32766",
+        "b": "209479352",
+        "sum": "32766"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 5,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "a": "5",
+        "b": "209479352",
+        "sum": "32766"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 6,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 6,
+       "locals": {
+        "a": "5",
+        "b": "10",
+        "sum": "32766"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 7,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 7,
+       "locals": {
+        "a": "5",
+        "b": "10",
+        "sum": "15"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 8,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 8,
+       "locals": {
+        "a": "5",
+        "b": "10",
+        "sum": "15"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 9,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 9,
+       "locals": {
+        "a": "5",
+        "b": "10",
+        "sum": "15"
+       }
+      }
+     ]
+    }
+   ],
+   "truncated": false
+  },
+  "recursion": {
+   "ok": true,
+   "steps": [
+    {
+     "heap": [],
+     "line": 9,
+     "message": "Program started.",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 9,
+       "locals": {
+        "result": "32766"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 4,
+     "message": "",
+     "stack": [
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 4,
+       "locals": {
+        "n": "4"
+       }
+      },
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 9,
+       "locals": {
+        "result": "32766"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 5,
+     "message": "",
+     "stack": [
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "4"
+       }
+      },
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 9,
+       "locals": {
+        "result": "32766"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 4,
+     "message": "",
+     "stack": [
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 4,
+       "locals": {
+        "n": "3"
+       }
+      },
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "4"
+       }
+      },
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 9,
+       "locals": {
+        "result": "32766"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 5,
+     "message": "",
+     "stack": [
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "3"
+       }
+      },
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "4"
+       }
+      },
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 9,
+       "locals": {
+        "result": "32766"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 4,
+     "message": "",
+     "stack": [
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 4,
+       "locals": {
+        "n": "2"
+       }
+      },
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "3"
+       }
+      },
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "4"
+       }
+      },
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 9,
+       "locals": {
+        "result": "32766"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 5,
+     "message": "",
+     "stack": [
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "2"
+       }
+      },
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "3"
+       }
+      },
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "4"
+       }
+      },
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 9,
+       "locals": {
+        "result": "32766"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 4,
+     "message": "",
+     "stack": [
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 4,
+       "locals": {
+        "n": "1"
+       }
+      },
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "2"
+       }
+      },
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "3"
+       }
+      },
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "4"
+       }
+      },
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 9,
+       "locals": {
+        "result": "32766"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 6,
+     "message": "",
+     "stack": [
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 6,
+       "locals": {
+        "n": "1"
+       }
+      },
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "2"
+       }
+      },
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "3"
+       }
+      },
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "4"
+       }
+      },
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 9,
+       "locals": {
+        "result": "32766"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 6,
+     "message": "",
+     "stack": [
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 6,
+       "locals": {
+        "n": "2"
+       }
+      },
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "3"
+       }
+      },
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "4"
+       }
+      },
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 9,
+       "locals": {
+        "result": "32766"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 6,
+     "message": "",
+     "stack": [
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 6,
+       "locals": {
+        "n": "3"
+       }
+      },
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "n": "4"
+       }
+      },
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 9,
+       "locals": {
+        "result": "32766"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 6,
+     "message": "",
+     "stack": [
+      {
+       "func": "factorial",
+       "is_user_code": true,
+       "line": 6,
+       "locals": {
+        "n": "4"
+       }
+      },
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 9,
+       "locals": {
+        "result": "32766"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 10,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 10,
+       "locals": {
+        "result": "24"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 11,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 11,
+       "locals": {
+        "result": "24"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 12,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 12,
+       "locals": {
+        "result": "24"
+       }
+      }
+     ]
+    }
+   ],
+   "truncated": false
+  },
+  "malloc": {
+   "ok": true,
+   "steps": [
+    {
+     "heap": [],
+     "line": 5,
+     "message": "Program started.",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "arr": "0x7ffeecb85b58",
+        "total": "32766"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [
+      {
+       "addr": "0x55f2c00112a0",
+       "size": 12
+      }
+     ],
+     "line": 5,
+     "message": "malloc(12) -> 0x55f2c00112a0",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "arr": "0x7ffeecb85b58",
+        "total": "32766"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [
+      {
+       "addr": "0x55f2c00112a0",
+       "size": 12
+      }
+     ],
+     "line": 5,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 5,
+       "locals": {
+        "arr": "0x7ffeecb85b58",
+        "total": "32766"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [
+      {
+       "addr": "0x55f2c00112a0",
+       "size": 12
+      }
+     ],
+     "line": 6,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 6,
+       "locals": {
+        "arr": "0x55f2c00112a0",
+        "total": "32766"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [
+      {
+       "addr": "0x55f2c00112a0",
+       "size": 12
+      }
+     ],
+     "line": 7,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 7,
+       "locals": {
+        "arr": "0x55f2c00112a0",
+        "total": "32766"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [
+      {
+       "addr": "0x55f2c00112a0",
+       "size": 12
+      }
+     ],
+     "line": 8,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 8,
+       "locals": {
+        "arr": "0x55f2c00112a0",
+        "total": "32766"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [
+      {
+       "addr": "0x55f2c00112a0",
+       "size": 12
+      }
+     ],
+     "line": 9,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 9,
+       "locals": {
+        "arr": "0x55f2c00112a0",
+        "total": "32766"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [
+      {
+       "addr": "0x55f2c00112a0",
+       "size": 12
+      }
+     ],
+     "line": 10,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 10,
+       "locals": {
+        "arr": "0x55f2c00112a0",
+        "total": "6"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 11,
+     "message": "free(0x55f2c00112a0)",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 11,
+       "locals": {
+        "arr": "0x55f2c00112a0",
+        "total": "6"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 11,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 11,
+       "locals": {
+        "arr": "0x55f2c00112a0",
+        "total": "6"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 12,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 12,
+       "locals": {
+        "arr": "0x55f2c00112a0",
+        "total": "6"
+       }
+      }
+     ]
+    },
+    {
+     "heap": [],
+     "line": 13,
+     "message": "",
+     "stack": [
+      {
+       "func": "main",
+       "is_user_code": true,
+       "line": 13,
+       "locals": {
+        "arr": "0x55f2c00112a0",
+        "total": "6"
+       }
+      }
+     ]
+    }
+   ],
+   "truncated": false
+  }
+ }
+}

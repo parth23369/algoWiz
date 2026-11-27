@@ -9,6 +9,12 @@ This now includes a working sandbox layer (`sandboxed_worker.py` +
 (a fifth "C / Memory" type in `code-visualizer.html`) — all tested end to
 end against a real running backend, not just described.
 
+**Running it in Docker** is described in the [root README](../README.md). The
+diagram and the verification notes below describe the native setup, where
+`unshare` is permitted. In the containers `unshare` is not permitted, the server
+already runs as `sandboxrunner`, and network limits come from
+`docker-compose.yml`.
+
 ## Architecture
 
 ```
@@ -163,6 +169,9 @@ On a timeout: `{"ok": false, "error": "timeout", "detail": "..."}`.
 
 ## What's actually verified (not just claimed)
 
+These points were checked in the native setup. Container results are in the
+[root README](../README.md#tests).
+
 - Network isolation: a real `connect()` call in submitted C returns `-1`
   (fails) when run inside the `unshare --net` namespace — confirmed with
   actual malicious C, not a mock.
@@ -177,26 +186,30 @@ On a timeout: `{"ok": false, "error": "timeout", "detail": "..."}`.
   simultaneously visible), a growing/shrinking heap map, and a compile
   error / unreachable-backend error path.
 
-## Remaining gap: this is namespace isolation, not container isolation
+## Remaining gap: containers help, but share one user and the host kernel
 
-`unshare --net --pid` + privilege drop + rlimits meaningfully raises the
-bar over "just run gcc and gdb directly," and every claim above is tested,
-not assumed. It is **still not full container/microVM isolation**
-(gVisor/Firecracker) — Docker wasn't available in this environment to
-build/test that layer, so it remains a documented gap rather than a
-verified one:
+**What the Docker setup closes**, compared with running natively:
 
-- No seccomp syscall filtering — a kernel exploit reachable via `ptrace`
-  or any other syscall this environment allows is still a real risk this
-  setup does not close.
-- No filesystem isolation beyond what the unprivileged user can already
-  read — `chroot`/read-only bind mounts are not yet in place.
-- Single-host, no rate limiting or request queue — many concurrent
-  requests would compete for the same CPU/memory with no fairness
-  guarantee.
+- System calls pass through Docker's default seccomp profile (not a custom
+  filter). It still allows `ptrace`, which `gdb` needs.
+- The root filesystem is read-only; only `/tmp` and `/dev/shm` are writable.
+- All capabilities are dropped, and the container has memory, CPU and process
+  limits.
+- The backend's network has no route to the Docker host or the public internet
+  (Docker Engine 28.0 or newer).
+- Processes a request leaves behind are killed, including ones that left its
+  process group. (This part is in `sandbox_run.py`, so it applies natively too.)
 
-Before exposing this to actual strangers, add gVisor or Firecracker-level
-isolation on top of what's here, plus rate limiting and a request queue.
+**Still open:**
+
+- Submitted code runs as the same user as the server: it can **kill or freeze
+  the server**, read its source, fill `/tmp`, and interfere with other requests.
+  Docker restarts a killed server but not a frozen one.
+- No gVisor or Firecracker: submitted code shares the host's kernel.
+- No request queue or rate limit. While a fork bomb runs, other requests fail.
+
+The full list is in the [root README](../README.md#what-the-containers-do-not-limit).
+Do not expose this backend to people you do not trust.
 
 ## Frontend integration
 
@@ -212,7 +225,18 @@ types.
 
 ## Running it yourself
 
+With Docker (Engine 28.0 or newer), from the repository root:
+
 ```bash
+docker compose up -d --build --wait
+```
+
+Without Docker (Linux, with `gcc`, `gdb` and `libc6-dbg` installed). Resource
+limits are applied when `app.py` runs as root or as `sandboxrunner`; under any
+other account they are not.
+
+```bash
+cd pages
 pip install -r requirements.txt
 useradd -M -s /usr/sbin/nologin sandboxrunner   # one-time setup
 python3 app.py                                   # starts on :5001

@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:        # "Run workflow" button on the Actions tab
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build image and run pytest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - name: Docker versions
+        run: |
+          docker version
+          docker compose version
+      - name: Build the server image
+        run: docker compose build backend
+      - name: Run pytest in the container
+        run: docker compose run --rm --build tests
+
+  # Manual only: these checks have not yet been run on GitHub's runners.
+  security-checks:
+    name: Security and behaviour checks (manual)
+    if: github.event_name == 'workflow_dispatch'
+    needs: build-and-test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - name: Behaviour matches the pre-container baseline
+        run: python3 tests/behaviour_check.py
+      - name: Security checks
+        run: python3 tests/security_check.py --report security-report.md
+      - name: Keep the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: security-report.md
